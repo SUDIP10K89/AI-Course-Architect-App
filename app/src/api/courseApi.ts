@@ -31,6 +31,18 @@ const apiClient: AxiosInstance = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
+// Automatically attach auth token from localStorage if present
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token && config.headers) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Request interceptor for logging
 apiClient.interceptors.request.use(
   (config) => {

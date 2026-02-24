@@ -123,6 +123,32 @@ export interface ApiResponse<T> {
   code?: string;
 }
 
+// ============================================
+// Authentication Types
+// ============================================
+
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+export interface LoginForm {
+  email: string;
+  password: string;
+}
+
+export interface SignupForm {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
 export interface PaginationInfo {
   page: number;
   limit: number;

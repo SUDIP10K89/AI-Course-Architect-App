@@ -24,6 +24,8 @@ npm run dev
 | `MONGODB_URI` | MongoDB connection string | Yes |
 | `OPENAI_API_KEY` | OpenAI API key | Yes |
 | `YOUTUBE_API_KEY` | YouTube Data API key | Yes |
+| `JWT_SECRET` | Secret key for signing auth tokens | Yes |
+| `JWT_EXPIRES_IN` | Token expiry (e.g. "1h") | No (default: "1h") |
 | `CORS_ORIGIN` | Allowed CORS origins | No |
 
 ## Scripts
@@ -55,6 +57,58 @@ src/
 ```
 
 ## API Documentation
+
+### Authentication
+
+#### POST /api/auth/signup
+
+Create a new user account.
+
+**Request body**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+**Response** (201)
+```json
+{
+  "success": true,
+  "data": {
+    "user": { "_id": "...", "name": "John Doe", "email": "john@example.com" },
+    "token": "<jwt>"
+  }
+}
+```
+
+#### POST /api/auth/login
+
+Authenticate existing user.
+
+**Request body**
+```json
+{
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+**Response** (200)
+```json
+{
+  "success": true,
+  "data": {
+    "user": { "_id": "...", "name": "John Doe", "email": "john@example.com" },
+    "token": "<jwt>"
+  }
+}
+```
+
+All subsequent `/api/courses` endpoints require the `Authorization: Bearer <token>` header.
+
 
 ### POST /api/courses/generate
 

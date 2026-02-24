@@ -14,15 +14,16 @@ import * as youtubeService from './youtubeService.js';
  * @param {string} topic - The course topic
  * @returns {Promise<Object>} Generated course document
  */
-export const generateCourse = async (topic) => {
+export const generateCourse = async (topic, userId) => {
   try {
-    console.log(`\n🚀 Starting course generation for: "${topic}"\n`);
+    console.log(`\n🚀 Starting course generation for: "${topic}" (user ${userId})\n`);
     
     // Step 1: Generate course outline using AI
     const outline = await openaiService.generateCourseOutline(topic);
     
     // Step 2: Prepare course structure
     const courseData = {
+      createdBy: userId,
       title: outline.title,
       description: outline.description,
       topic: topic,

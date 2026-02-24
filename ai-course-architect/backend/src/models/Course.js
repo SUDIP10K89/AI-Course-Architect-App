@@ -126,6 +126,12 @@ const moduleSchema = new mongoose.Schema({
  * Main Course Schema
  */
 const courseSchema = new mongoose.Schema({
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  },
   title: {
     type: String,
     required: true,
@@ -191,6 +197,12 @@ const courseSchema = new mongoose.Schema({
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
+});
+
+// ensure any find query populates user name/email maybe
+courseSchema.pre(/^find/, function (next) {
+  this.populate({ path: 'createdBy', select: 'name email' });
+  next();
 });
 
 // Indexes for efficient queries

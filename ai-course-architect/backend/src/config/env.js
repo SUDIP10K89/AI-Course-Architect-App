@@ -55,6 +55,14 @@ export const CORS_CONFIG = {
 };
 
 /**
+ * JWT configuration
+ */
+export const JWT_CONFIG = {
+  SECRET: process.env.JWT_SECRET,
+  EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1h',
+};
+
+/**
  * Rate limiting configuration
  */
 export const RATE_LIMIT_CONFIG = {
@@ -70,6 +78,7 @@ export const validateEnv = () => {
   const required = [
     { key: 'OPENAI_API_KEY', value: OPENAI_CONFIG.API_KEY },
     { key: 'YOUTUBE_API_KEY', value: YOUTUBE_CONFIG.API_KEY },
+    { key: 'JWT_SECRET', value: JWT_CONFIG.SECRET },
   ];
 
   const missing = required

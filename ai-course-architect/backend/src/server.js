@@ -100,6 +100,10 @@ app.use((req, res, next) => {
 // Health check routes (no rate limiting)
 app.use('/api/health', healthRoutes);
 
+// Authentication routes
+import authRoutes from './routes/authRoutes.js';
+app.use('/api/auth', authRoutes);
+
 // Course routes with generation limiter for POST /generate
 app.use('/api/courses/generate', generationLimiter);
 app.use('/api/courses', courseRoutes);

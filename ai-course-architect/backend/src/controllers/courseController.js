@@ -15,6 +15,11 @@ import Course from '../models/Course.js';
 export const generateCourse = async (req, res, next) => {
   try {
     const { topic } = req.body;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
     
     if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
       return res.status(400).json({
@@ -25,21 +30,22 @@ export const generateCourse = async (req, res, next) => {
     
     const trimmedTopic = topic.trim();
     
-    // Check if course already exists for this topic
+    // Check if course already exists for this topic for this user
     const existingCourse = await Course.findOne({ 
       topic: { $regex: new RegExp(`^${trimmedTopic}$`, 'i') },
       isArchived: false,
+      createdBy: user._id,
     });
     
     if (existingCourse) {
       return res.status(409).json({
         success: false,
-        error: 'A course for this topic already exists',
+        error: 'You already have a course for this topic',
         data: { courseId: existingCourse._id },
       });
     }
     
-    const course = await courseService.generateCourse(trimmedTopic);
+    const course = await courseService.generateCourse(trimmedTopic, user._id);
     
     res.status(201).json({
       success: true,
@@ -72,8 +78,13 @@ export const getAllCourses = async (req, res, next) => {
       sortBy = 'createdAt',
       order = 'desc',
     } = req.query;
+
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
     
-    const query = { isArchived: false };
+    const query = { isArchived: false, createdBy: user._id };
     
     // Search filter
     if (search) {
@@ -134,9 +145,16 @@ export const getAllCourses = async (req, res, next) => {
  */
 export const getRecentCourses = async (req, res, next) => {
   try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
     const limit = parseInt(req.query.limit) || 5;
     
-    const courses = await Course.getRecent(limit);
+    const courses = await Course.find({ createdBy: user._id, isArchived: false })
+      .sort({ createdAt: -1 })
+      .limit(limit);
     
     res.json({
       success: true,
@@ -155,8 +173,15 @@ export const getRecentCourses = async (req, res, next) => {
 export const getCourseById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
     const result = await courseService.getCourseWithStatus(id);
+    if (!result.course.createdBy.equals(user._id)) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
     
     res.json({
       success: true,
@@ -211,6 +236,14 @@ export const getCourseStatus = async (req, res, next) => {
 export const generateMicroTopicContent = async (req, res, next) => {
   try {
     const { id, moduleId, topicId } = req.params;
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, error: 'Not authorized' });
+
+    const course = await Course.findById(id);
+    if (!course) throw new Error('Course not found');
+    if (!course.createdBy.equals(user._id)) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
     
     const microTopic = await courseService.generateMicroTopicContent(id, moduleId, topicId);
     
@@ -240,14 +273,20 @@ export const generateMicroTopicContent = async (req, res, next) => {
 export const completeMicroTopic = async (req, res, next) => {
   try {
     const { id, moduleId, topicId } = req.params;
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, error: 'Not authorized' });
+
+    const course = await Course.findById(id);
+    if (!course) throw new Error('Course not found');
+    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
     
-    const course = await courseService.completeMicroTopic(id, moduleId, topicId);
+    const updatedCourse = await courseService.completeMicroTopic(id, moduleId, topicId);
     
     res.json({
       success: true,
       message: 'Micro-topic marked as complete',
       data: {
-        progress: course.progress,
+        progress: updatedCourse.progress,
       },
     });
     
@@ -271,6 +310,12 @@ export const completeMicroTopic = async (req, res, next) => {
 export const regenerateModule = async (req, res, next) => {
   try {
     const { id, moduleId } = req.params;
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, error: 'Not authorized' });
+
+    const course = await Course.findById(id);
+    if (!course) throw new Error('Course not found');
+    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
     
     const module = await courseService.regenerateModule(id, moduleId);
     
@@ -298,6 +343,14 @@ export const regenerateModule = async (req, res, next) => {
 export const deleteCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, error: 'Not authorized' });
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({ success: false, error: 'Course not found' });
+    }
+    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
     
     const deleted = await courseService.deleteCourse(id);
     
@@ -325,13 +378,19 @@ export const deleteCourse = async (req, res, next) => {
 export const archiveCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, error: 'Not authorized' });
+
+    const course = await Course.findById(id);
+    if (!course) throw new Error('Course not found');
+    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
     
-    const course = await courseService.archiveCourse(id);
+    const updated = await courseService.archiveCourse(id);
     
     res.json({
       success: true,
       message: 'Course archived successfully',
-      data: { course },
+      data: { course: updated },
     });
     
   } catch (error) {
@@ -353,6 +412,12 @@ export const exportCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { format = 'json' } = req.query;
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, error: 'Not authorized' });
+
+    const course = await Course.findById(id);
+    if (!course) throw new Error('Course not found');
+    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
     
     const courseData = await courseService.exportCourse(id);
     

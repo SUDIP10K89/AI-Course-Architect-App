@@ -8,7 +8,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import dotenv from 'dotenv'
 
+dotenv.config()
 // Configuration
 import { SERVER_CONFIG, CORS_CONFIG, validateEnv } from './config/env.js';
 import { connectDatabase } from './config/database.js';
@@ -154,6 +156,13 @@ const startServer = async () => {
     
     // Connect to database
     await connectDatabase();
+
+    // verify OpenAI access early to catch invalid keys before handling requests
+    const openaiHealthy = await import('./services/openaiService.js').then(m => m.checkOpenAIHealth());
+    if (!openaiHealthy) {
+      logError('🎯 OpenAI API health check failed. Please verify your OPENAI_API_KEY and optional BASE_URL.');
+      process.exit(1);
+    }
     
     // Start server
     app.listen(SERVER_CONFIG.PORT, () => {

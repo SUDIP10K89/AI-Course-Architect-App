@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Sparkles, Loader2, BookOpen, Lightbulb, Code, Brain, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,13 +25,19 @@ const SUGGESTED_TOPICS = [
 
 const CourseGenerator: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [topic, setTopic] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     if (!topic.trim()) {
       setError('Please enter a topic');
       return;

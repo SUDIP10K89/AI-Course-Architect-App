@@ -5,7 +5,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Sparkles, BookOpen, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,13 +20,16 @@ import type { Course, StatsResponse } from '@/types';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [recentCourses, setRecentCourses] = useState<Course[]>([]);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [_isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   const loadData = async () => {
     try {
@@ -87,14 +91,22 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Course Generator */}
-            <CourseGenerator />
+            {isAuthenticated ? (
+              <CourseGenerator />
+            ) : (
+              <div className="text-center mb-6">
+                <Button onClick={() => navigate('/login')}>
+                  Log in to generate a course
+                </Button>
+              </div>
+            )}
           </div>
         </section>
 
-        <Separator />
+        {isAuthenticated && <Separator />}
 
         {/* Stats Section */}
-        {stats && (
+        {isAuthenticated && stats && (
           <section className="py-12 px-4 bg-muted/50">
             <div className="max-w-6xl mx-auto">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
@@ -128,7 +140,7 @@ const HomePage: React.FC = () => {
         )}
 
         {/* Recent Courses */}
-        {recentCourses.length > 0 && (
+        {isAuthenticated && recentCourses.length > 0 && (
           <section className="py-12 px-4">
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between mb-6">

@@ -21,7 +21,13 @@ const apiClient: AxiosInstance = axios.create({
 // attach token from localStorage for any request (not needed for login/signup but safe)
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    let token: string | null = null;
+  const stored = localStorage.getItem('auth');
+  if (stored) {
+    try {
+      token = JSON.parse(stored).token;
+    } catch {}
+  }
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -34,6 +40,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error) && error.response) {
+      // auto-logout on unauthorized
+      if (error.response.status === 401) {
+        localStorage.removeItem('auth');
+        window.location.href = '/login';
+      }
       console.error('Auth API Error:', error.response.data);
       return Promise.reject(error.response.data);
     }

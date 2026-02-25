@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 import axios from 'axios';
 import type { User } from '@/types';
 import * as authApi from '@/api/authApi';
+import * as courseApi from '@/api/courseApi';
 
 interface AuthContextType {
   user: User | null;
@@ -68,6 +69,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (response.success) {
       setUser(response.data.user);
       setToken(response.data.token);
+      // persist right away so interceptors can see it
+      localStorage.setItem('auth', JSON.stringify({ user: response.data.user, token: response.data.token }));
+      courseApi.setAuthToken(response.data.token);
     } else {
       throw new Error(response.error || 'Login failed');
     }
@@ -78,6 +82,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (response.success) {
       setUser(response.data.user);
       setToken(response.data.token);
+      localStorage.setItem('auth', JSON.stringify({ user: response.data.user, token: response.data.token }));
+      courseApi.setAuthToken(response.data.token);
     } else {
       throw new Error(response.error || 'Signup failed');
     }

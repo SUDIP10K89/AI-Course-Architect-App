@@ -22,7 +22,8 @@ npm run dev
 |----------|-------------|----------|
 | `PORT` | Server port | No (default: 5000) |
 | `MONGODB_URI` | MongoDB connection string | Yes |
-| `OPENAI_API_KEY` | OpenAI API key | Yes |
+| `OPENAI_API_KEY` | OpenAI API key (or OpenRouter key if using proxy) | Yes |
+| `OPENAI_BASE_URL` | Optional base URL for OpenAI/Router endpoint (e.g. https://openrouter.ai/api/v1) | No |
 | `YOUTUBE_API_KEY` | YouTube Data API key | Yes |
 | `JWT_SECRET` | Secret key for signing auth tokens | Yes |
 | `JWT_EXPIRES_IN` | Token expiry (e.g. "1h") | No (default: "1h") |
@@ -171,5 +172,6 @@ Common error codes:
 - `VALIDATION_ERROR` - Invalid input data
 - `NOT_FOUND` - Resource not found
 - `RATE_LIMIT_EXCEEDED` - Too many requests
-- `AI_SERVICE_ERROR` - OpenAI API error
+- `AI_SERVICE_ERROR` - OpenAI API error (temporary outage or bad response)
+- `AI_AUTH_ERROR` - Authentication failure with OpenAI/Router (invalid API key)
 - `VIDEO_SERVICE_ERROR` - YouTube API error

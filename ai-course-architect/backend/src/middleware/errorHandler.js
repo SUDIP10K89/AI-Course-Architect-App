@@ -94,9 +94,16 @@ export const globalErrorHandler = (err, req, res, next) => {
   
   // OpenAI API errors
   if (err.message && err.message.includes('OpenAI')) {
-    statusCode = 503;
-    code = 'AI_SERVICE_ERROR';
-    message = 'AI service temporarily unavailable';
+    // unauthorized keys get caught earlier in service, return 401-like status
+    if (err.message.toLowerCase().includes('unauthorized')) {
+      statusCode = 401;
+      code = 'AI_AUTH_ERROR';
+      message = 'Invalid AI API key/configuration';
+    } else {
+      statusCode = 503;
+      code = 'AI_SERVICE_ERROR';
+      message = 'AI service temporarily unavailable';
+    }
   }
   
   // YouTube API errors

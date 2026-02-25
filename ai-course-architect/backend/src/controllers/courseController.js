@@ -16,27 +16,27 @@ export const generateCourse = async (req, res, next) => {
   try {
     const { topic } = req.body;
     const user = req.user;
-
+    console.log("Tgis is user",user)
     if (!user) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
-    
+
     if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Topic is required and must be a non-empty string',
       });
     }
-    
+
     const trimmedTopic = topic.trim();
-    
+
     // Check if course already exists for this topic for this user
-    const existingCourse = await Course.findOne({ 
+    const existingCourse = await Course.findOne({
       topic: { $regex: new RegExp(`^${trimmedTopic}$`, 'i') },
       isArchived: false,
       createdBy: user._id,
     });
-    
+
     if (existingCourse) {
       return res.status(409).json({
         success: false,
@@ -44,9 +44,9 @@ export const generateCourse = async (req, res, next) => {
         data: { courseId: existingCourse._id },
       });
     }
-    
+
     const course = await courseService.generateCourse(trimmedTopic, user._id);
-    
+
     res.status(201).json({
       success: true,
       message: 'Course generation started',
@@ -58,7 +58,7 @@ export const generateCourse = async (req, res, next) => {
         microTopicsCount: course.progress.totalMicroTopics,
       },
     });
-    
+
   } catch (error) {
     next(error);
   }
@@ -70,10 +70,10 @@ export const generateCourse = async (req, res, next) => {
  */
 export const getAllCourses = async (req, res, next) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      search = '', 
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
       status = '',
       sortBy = 'createdAt',
       order = 'desc',
@@ -83,9 +83,9 @@ export const getAllCourses = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
-    
+
     const query = { isArchived: false, createdBy: user._id };
-    
+
     // Search filter
     if (search) {
       query.$or = [
@@ -94,7 +94,7 @@ export const getAllCourses = async (req, res, next) => {
         { description: { $regex: search, $options: 'i' } },
       ];
     }
-    
+
     // Status filter
     if (status) {
       if (status === 'not-started') {
@@ -105,13 +105,13 @@ export const getAllCourses = async (req, res, next) => {
         query['progress.percentage'] = 100;
       }
     }
-    
+
     const sortOrder = order === 'asc' ? 1 : -1;
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder;
-    
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
     const [courses, total] = await Promise.all([
       Course.find(query)
         .sort(sortOptions)
@@ -120,7 +120,7 @@ export const getAllCourses = async (req, res, next) => {
         .select('title description topic difficulty progress metadata createdAt'),
       Course.countDocuments(query),
     ]);
-    
+
     res.json({
       success: true,
       data: {
@@ -133,7 +133,7 @@ export const getAllCourses = async (req, res, next) => {
         },
       },
     });
-    
+
   } catch (error) {
     next(error);
   }
@@ -151,16 +151,16 @@ export const getRecentCourses = async (req, res, next) => {
     }
 
     const limit = parseInt(req.query.limit) || 5;
-    
+
     const courses = await Course.find({ createdBy: user._id, isArchived: false })
       .sort({ createdAt: -1 })
       .limit(limit);
-    
+
     res.json({
       success: true,
       data: { courses },
     });
-    
+
   } catch (error) {
     next(error);
   }
@@ -179,15 +179,17 @@ export const getCourseById = async (req, res, next) => {
     }
 
     const result = await courseService.getCourseWithStatus(id);
-    if (!result.course.createdBy.equals(user._id)) {
+    // createdBy may be populated object or ObjectId; compare string values
+    const ownerId = result.course.createdBy?._id || result.course.createdBy;
+    if (String(ownerId) !== String(user._id)) {
       return res.status(403).json({ success: false, error: 'Forbidden' });
     }
-    
+
     res.json({
       success: true,
       data: result,
     });
-    
+
   } catch (error) {
     if (error.message === 'Course not found') {
       return res.status(404).json({
@@ -206,9 +208,9 @@ export const getCourseById = async (req, res, next) => {
 export const getCourseStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     const result = await courseService.getCourseWithStatus(id);
-    
+
     res.json({
       success: true,
       data: {
@@ -217,7 +219,7 @@ export const getCourseStatus = async (req, res, next) => {
         progress: result.course.progress,
       },
     });
-    
+
   } catch (error) {
     if (error.message === 'Course not found') {
       return res.status(404).json({
@@ -241,22 +243,23 @@ export const generateMicroTopicContent = async (req, res, next) => {
 
     const course = await Course.findById(id);
     if (!course) throw new Error('Course not found');
-    if (!course.createdBy.equals(user._id)) {
+    const ownerId = course.createdBy?._id || course.createdBy;
+    if (String(ownerId) !== String(user._id)) {
       return res.status(403).json({ success: false, error: 'Forbidden' });
     }
-    
+
     const microTopic = await courseService.generateMicroTopicContent(id, moduleId, topicId);
-    
+
     res.json({
       success: true,
       message: 'Content generated successfully',
       data: { microTopic },
     });
-    
+
   } catch (error) {
-    if (error.message === 'Course not found' || 
-        error.message === 'Module not found' || 
-        error.message === 'Micro-topic not found') {
+    if (error.message === 'Course not found' ||
+      error.message === 'Module not found' ||
+      error.message === 'Micro-topic not found') {
       return res.status(404).json({
         success: false,
         error: error.message,
@@ -278,10 +281,11 @@ export const completeMicroTopic = async (req, res, next) => {
 
     const course = await Course.findById(id);
     if (!course) throw new Error('Course not found');
-    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
-    
+    const ownerId = course.createdBy?._id || course.createdBy;
+    if (String(ownerId) !== String(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
+
     const updatedCourse = await courseService.completeMicroTopic(id, moduleId, topicId);
-    
+
     res.json({
       success: true,
       message: 'Micro-topic marked as complete',
@@ -289,11 +293,11 @@ export const completeMicroTopic = async (req, res, next) => {
         progress: updatedCourse.progress,
       },
     });
-    
+
   } catch (error) {
-    if (error.message === 'Course not found' || 
-        error.message === 'Module not found' || 
-        error.message === 'Micro-topic not found') {
+    if (error.message === 'Course not found' ||
+      error.message === 'Module not found' ||
+      error.message === 'Micro-topic not found') {
       return res.status(404).json({
         success: false,
         error: error.message,
@@ -315,16 +319,17 @@ export const regenerateModule = async (req, res, next) => {
 
     const course = await Course.findById(id);
     if (!course) throw new Error('Course not found');
-    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
-    
+    const ownerId2 = course.createdBy?._id || course.createdBy;
+    if (String(ownerId2) !== String(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
+
     const module = await courseService.regenerateModule(id, moduleId);
-    
+
     res.json({
       success: true,
       message: 'Module regeneration started',
       data: { module },
     });
-    
+
   } catch (error) {
     if (error.message === 'Course not found' || error.message === 'Module not found') {
       return res.status(404).json({
@@ -350,22 +355,23 @@ export const deleteCourse = async (req, res, next) => {
     if (!course) {
       return res.status(404).json({ success: false, error: 'Course not found' });
     }
-    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
-    
+    const ownerId3 = course.createdBy?._id || course.createdBy;
+    if (String(ownerId3) !== String(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
+
     const deleted = await courseService.deleteCourse(id);
-    
+
     if (!deleted) {
       return res.status(404).json({
         success: false,
         error: 'Course not found',
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Course deleted successfully',
     });
-    
+
   } catch (error) {
     next(error);
   }
@@ -383,16 +389,17 @@ export const archiveCourse = async (req, res, next) => {
 
     const course = await Course.findById(id);
     if (!course) throw new Error('Course not found');
-    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
-    
+    const ownerId3 = course.createdBy?._id || course.createdBy;
+    if (String(ownerId3) !== String(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
+
     const updated = await courseService.archiveCourse(id);
-    
+
     res.json({
       success: true,
       message: 'Course archived successfully',
       data: { course: updated },
     });
-    
+
   } catch (error) {
     if (error.message === 'Course not found') {
       return res.status(404).json({
@@ -417,10 +424,11 @@ export const exportCourse = async (req, res, next) => {
 
     const course = await Course.findById(id);
     if (!course) throw new Error('Course not found');
-    if (!course.createdBy.equals(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
-    
+    const ownerId4 = course.createdBy?._id || course.createdBy;
+    if (String(ownerId4) !== String(user._id)) return res.status(403).json({ success: false, error: 'Forbidden' });
+
     const courseData = await courseService.exportCourse(id);
-    
+
     if (format === 'json') {
       res.json({
         success: true,
@@ -432,7 +440,7 @@ export const exportCourse = async (req, res, next) => {
         error: 'Unsupported export format',
       });
     }
-    
+
   } catch (error) {
     if (error.message === 'Course not found') {
       return res.status(404).json({
@@ -463,9 +471,9 @@ export const getCourseStats = async (req, res, next) => {
         },
       },
     ]);
-    
+
     const recentCourses = await Course.getRecent(5);
-    
+
     res.json({
       success: true,
       data: {
@@ -479,7 +487,7 @@ export const getCourseStats = async (req, res, next) => {
         recentCourses,
       },
     });
-    
+
   } catch (error) {
     next(error);
   }

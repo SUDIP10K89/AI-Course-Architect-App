@@ -14,6 +14,7 @@ import CoursesPage from '@/pages/CoursesPage';
 import CourseViewer from '@/components/CourseViewer';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { Toaster } from '@/components/ui/sonner';
 import './App.css';
 
@@ -25,8 +26,22 @@ const App: React.FC = () => {
           <Router>
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/courses/:courseId" element={<CourseViewer />} />
+              <Route
+                path="/courses"
+                element={
+                  <ProtectedRoute>
+                    <CoursesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses/:courseId"
+                element={
+                  <ProtectedRoute>
+                    <CourseViewer />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
             </Routes>

@@ -8,11 +8,20 @@
 import OpenAI from 'openai';
 import { OPENAI_CONFIG } from '../config/env.js';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
+// Initialize OpenAI client.  `OPENAI_CONFIG.BASE_URL` is optional, so we
+// only add it if the environment provided a value. This makes it easy to
+// switch between OpenAI's official endpoint and a proxy such as OpenRouter
+// without changing code.
+const clientOptions = {
   apiKey: OPENAI_CONFIG.API_KEY,
-});
+};
+
+if (OPENAI_CONFIG.BASE_URL) {
+  clientOptions.baseURL = OPENAI_CONFIG.BASE_URL;
+}
+
+const openai = new OpenAI(clientOptions);
+
 
 /**
  * System prompt for course outline generation
@@ -183,6 +192,13 @@ Structure the content for optimal learning progression.`
 
     } catch (error) {
       lastError = error;
+
+      const status = error?.response?.status;
+      if (status === 401) {
+        console.error(`❌ Unauthorized (${status}) - invalid or missing OpenAI API key`);
+        throw new Error('OpenAI API unauthorized - please verify your API key');
+      }
+
       console.error(`❌ Attempt ${attempt} failed:`, error.message);
 
       if (attempt < MAX_RETRIES) {
@@ -260,6 +276,13 @@ Make the content engaging, educational, and suitable for self-paced learning.`
 
     } catch (error) {
       lastError = error;
+
+      const status = error?.response?.status;
+      if (status === 401) {
+        console.error(`❌ Unauthorized (${status}) - invalid or missing OpenAI API key`);
+        throw new Error('OpenAI API unauthorized - please verify your API key');
+      }
+
       console.error(`❌ Attempt ${attempt} failed:`, error.message);
 
       if (attempt < MAX_RETRIES) {

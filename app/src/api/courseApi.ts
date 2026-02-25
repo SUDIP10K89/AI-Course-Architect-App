@@ -34,7 +34,14 @@ const apiClient: AxiosInstance = axios.create({
 // Automatically attach auth token from localStorage if present
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    // try reading unified auth object (set by AuthContext)
+  let token: string | null = null;
+  const stored = localStorage.getItem('auth');
+  if (stored) {
+    try {
+      token = JSON.parse(stored).token;
+    } catch {}
+  }
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -57,12 +64,26 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error) && error.response) {
+      // logout on 401 so UI can respond
+      if (error.response.status === 401) {
+        localStorage.removeItem('auth');
+        window.location.href = '/login';
+      }
       console.error('API Error:', error.response.data);
       return Promise.reject(error.response.data);
     }
     return Promise.reject({ success: false, error: 'Network error' });
   }
 );
+
+// helper to manually set authorization header on instance
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete apiClient.defaults.headers.common['Authorization'];
+  }
+};
 
 // ============================================
 // Course API Methods

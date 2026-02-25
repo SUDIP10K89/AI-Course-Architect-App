@@ -35,6 +35,8 @@ export const OPENAI_CONFIG = {
   MODEL: process.env.OPENAI_MODEL || 'gpt-4o-mini',
   MAX_TOKENS: 4000,
   TEMPERATURE: 0.7,
+  // Optional override for non-standard endpoints (e.g. OpenRouter)
+  BASE_URL: process.env.OPENAI_BASE_URL || '',
 };
 
 /**
@@ -79,6 +81,7 @@ export const validateEnv = () => {
     { key: 'OPENAI_API_KEY', value: OPENAI_CONFIG.API_KEY },
     { key: 'YOUTUBE_API_KEY', value: YOUTUBE_CONFIG.API_KEY },
     { key: 'JWT_SECRET', value: JWT_CONFIG.SECRET },
+    // BASE_URL is optional and therefore not validated here
   ];
 
   const missing = required

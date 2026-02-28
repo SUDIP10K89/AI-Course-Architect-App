@@ -10,7 +10,7 @@
  * - Related videos
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Lightbulb, BookOpen, HelpCircle, PlayCircle, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 
 import type { MicroTopic } from '@/types';
 import * as courseApi from '@/api/courseApi';
+import { useCourse } from '@/contexts/CourseContext';
 
 interface LessonContentProps {
   microTopic: MicroTopic;
@@ -35,9 +36,15 @@ const LessonContent: React.FC<LessonContentProps> = ({
   courseId,
   moduleId,
 }) => {
+  const { loadCourse } = useCourse();
   const [isCompleting, setIsCompleting] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(microTopic.isCompleted);
+  const [isCompleted, setIsCompleted] = useState(!!microTopic?.isCompleted);
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
+
+  // Update isCompleted when microTopic changes
+  useEffect(() => {
+    setIsCompleted(!!microTopic?.isCompleted);
+  }, [microTopic?.isCompleted]);
 
   const handleMarkComplete = async () => {
     if (isCompleted) return;
@@ -46,6 +53,8 @@ const LessonContent: React.FC<LessonContentProps> = ({
     try {
       await courseApi.completeMicroTopic(courseId, moduleId, microTopic._id);
       setIsCompleted(true);
+      // Reload course to update progress
+      loadCourse(courseId);
     } catch (error) {
       console.error('Failed to mark as complete:', error);
     } finally {

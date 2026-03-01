@@ -6,9 +6,8 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Moon, Sun, Menu, X } from 'lucide-react';
+import { BookOpen, Menu, X, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
@@ -17,8 +16,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen = false }) => {
-  const { theme, toggleTheme } = useTheme();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
@@ -49,26 +47,33 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen = false }) => 
 
         {/* Navigation */}
         <nav className="flex items-center gap-1 text-sm font-medium flex-1">
-          <Link
-            to="/"
-            className="px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-foreground"
-          >
-            Home
-          </Link>
-          <Link
-            to="/courses"
-            className="px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-muted-foreground"
-          >
-            My Courses
-          </Link>
+          {isAuthenticated && (
+            <>
+              <Link
+                to="/"
+                className="px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-foreground"
+              >
+                Home
+              </Link>
+              <Link
+                to="/courses"
+                className="px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-muted-foreground"
+              >
+                My Courses
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
-            <Button variant="ghost" size="sm" onClick={logout} className="text-sm">
-              Logout
-            </Button>
+            <Link
+              to="/settings"
+              className="text-sm font-medium px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-foreground/80"
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
           ) : (
             <>
               <Link
@@ -85,19 +90,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen = false }) => 
               </Link>
             </>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-            className="ml-1"
-          >
-            {theme === 'light' ? (
-              <Moon className="h-5 w-5" />
-            ) : (
-              <Sun className="h-5 w-5" />
-            )}
-          </Button>
         </div>
       </div>
     </header>

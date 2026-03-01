@@ -21,8 +21,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen = false }) => 
   const { isAuthenticated, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center px-4 md:px-6">
         {/* Mobile Menu Button */}
         {onMenuToggle && (
           <Button
@@ -37,59 +37,60 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen = false }) => 
         )}
 
         {/* Logo */}
-        <div className="flex items-center gap-2 mr-4">
-          <BookOpen className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg hidden sm:inline-block">
+        <div className="flex items-center gap-2 mr-6">
+          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+            <BookOpen className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <span className="font-bold text-lg hidden sm:inline-block tracking-tight">
             AI Course Architect
           </span>
           <span className="font-bold text-lg sm:hidden">ACA</span>
         </div>
 
         {/* Navigation */}
-        <nav className="flex items-center gap-6 text-sm font-medium flex-1">
+        <nav className="flex items-center gap-1 text-sm font-medium flex-1">
           <Link
             to="/"
-            className="transition-colors hover:text-foreground/80 text-foreground"
+            className="px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-foreground"
           >
             Home
           </Link>
           <Link
             to="/courses"
-            className="transition-colors hover:text-foreground/80 text-foreground/60"
+            className="px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-muted-foreground"
           >
             My Courses
           </Link>
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {isAuthenticated ? (
-            <Button variant="ghost" size="sm" onClick={logout}>
+            <Button variant="ghost" size="sm" onClick={logout} className="text-sm">
               Logout
             </Button>
           ) : (
             <>
               <Link
                 to="/login"
-                className="text-sm text-foreground/80 hover:text-foreground transition-colors"
+                className="text-sm font-medium px-3 py-2 rounded-md transition-colors hover:bg-muted hover:text-foreground text-foreground/80"
               >
                 Login
               </Link>
               <Link
                 to="/signup"
-                className="text-sm text-foreground/60 hover:text-foreground/80 transition-colors"
+                className="text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                Sign&nbsp;Up
+                Sign Up
               </Link>
             </>
           )}
-        </div>
-        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
             aria-label="Toggle theme"
+            className="ml-1"
           >
             {theme === 'light' ? (
               <Moon className="h-5 w-5" />

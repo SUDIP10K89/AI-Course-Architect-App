@@ -124,19 +124,19 @@ const CourseGenerator: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <Card className="border-2 border-dashed">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+    <div className="w-full max-w-2xl mx-auto">
+      <Card className="border-2 border-dashed border-primary/20 shadow-lg">
+        <CardHeader className="text-center pb-4">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 shadow-sm">
             <Sparkles className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Generate a New Course</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold">Generate a New Course</CardTitle>
+          <CardDescription className="text-base mt-2">
             Enter any topic and our AI will create a comprehensive course with lessons, examples, and videos.
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-2">
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive">
@@ -178,29 +178,31 @@ const CourseGenerator: React.FC = () => {
           </form>
 
           {/* Suggested Topics */}
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground text-center">
-              Or try one of these popular topics:
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {SUGGESTED_TOPICS.map(({ icon: Icon, label, color }) => (
-                <Badge
-                  key={label}
-                  variant="secondary"
-                  className={`cursor-pointer hover:opacity-80 transition-opacity px-3 py-2 ${color}`}
-                  onClick={() => handleSuggestedTopic(label)}
-                >
-                  <Icon className="h-3.5 w-3.5 mr-1.5" />
-                  {label}
-                </Badge>
-              ))}
+          {!isGenerating && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground text-center font-medium">
+                Or try one of these popular topics:
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {SUGGESTED_TOPICS.map(({ icon: Icon, label, color }) => (
+                  <Badge
+                    key={label}
+                    variant="secondary"
+                    className={`cursor-pointer hover:opacity-80 transition-all px-4 py-2 text-sm ${color} hover:scale-105`}
+                    onClick={() => handleSuggestedTopic(label)}
+                  >
+                    <Icon className="h-3.5 w-3.5 mr-1.5" />
+                    {label}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Generation Info with Progress */}
           {isGenerating && (
-            <div className="space-y-4 p-4 bg-muted rounded-lg">
-              <div className="flex items-center justify-center gap-2">
+            <div className="space-y-4 p-6 bg-muted/50 rounded-xl border">
+              <div className="flex items-center justify-center gap-3">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 <p className="text-sm font-medium">Creating your course...</p>
               </div>
@@ -210,16 +212,16 @@ const CourseGenerator: React.FC = () => {
                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{progressMessage}</span>
-                  <span>{progress}%</span>
+                  <span className="font-medium">{progress}%</span>
                 </div>
               </div>
               
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center leading-relaxed">
                 This may take a few minutes. We're generating the outline, lessons, and finding relevant videos.
               </p>
               
               {generatedCourseId && (
-                <div className="text-xs text-center text-green-600 flex items-center justify-center gap-1">
+                <div className="text-xs text-center text-green-600 flex items-center justify-center gap-1 font-medium">
                   <CheckCircle2 className="h-3 w-3" />
                   Course created! Content is being generated in the background.
                 </div>

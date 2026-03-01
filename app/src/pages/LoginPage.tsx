@@ -45,53 +45,61 @@ const LoginPage: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="w-full max-w-sm mx-auto mt-12">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Log in</CardTitle>
-          <CardDescription>Enter your credentials to continue.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+            <p className="text-muted-foreground mt-2">Enter your credentials to access your account</p>
+          </div>
+          <Card className="shadow-lg border-2">
+            <CardContent className="pt-6">
+              {error && (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isSubmitting}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isSubmitting}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium">Email</label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isSubmitting}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="password" className="text-sm font-medium">Password</label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isSubmitting}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <Button type="submit" className="w-full h-11" disabled={isSubmitting}>
+                  {isSubmitting ? 'Signing in...' : 'Sign in'}
+                </Button>
+              </form>
 
-          <p className="text-sm text-center text-muted-foreground">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="text-primary underline">
-              Sign up
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+              <p className="text-sm text-center text-muted-foreground mt-6">
+                Don&apos;t have an account?{' '}
+                <Link to="/signup" className="text-primary font-medium hover:underline">
+                  Sign up
+                </Link>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   );

@@ -63,6 +63,33 @@ const SettingsPage: React.FC = () => {
     navigate('/');
   };
 
+  const handleToggleCustomProvider = async (checked: boolean) => {
+    try {
+      setUseCustomProvider(checked);
+      
+      const settingsPayload = {
+        apiKey: '', // Empty - backend will preserve existing
+        model,
+        baseUrl,
+        useCustomProvider: checked,
+      };
+      
+      const response = await settingsApi.updateSettings(settingsPayload);
+
+      if (response.success) {
+        setMessage({ type: 'success', text: `Custom AI provider ${checked ? 'enabled' : 'disabled'} successfully!` });
+      } else {
+        setMessage({ type: 'error', text: response.error || 'Failed to update setting' });
+        // Revert the toggle if save failed
+        setUseCustomProvider(!checked);
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to update setting' });
+      // Revert the toggle if save failed
+      setUseCustomProvider(!checked);
+    }
+  };
+
   const handleSaveSettings = async () => {
     try {
       setIsSaving(true);
@@ -237,7 +264,7 @@ const SettingsPage: React.FC = () => {
                       <Switch
                         id="use-custom-provider"
                         checked={useCustomProvider}
-                        onCheckedChange={setUseCustomProvider}
+                        onCheckedChange={handleToggleCustomProvider}
                       />
                     </div>
 

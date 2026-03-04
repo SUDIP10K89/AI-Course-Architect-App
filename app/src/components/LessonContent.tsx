@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Lightbulb, BookOpen, HelpCircle, PlayCircle, ChevronDown, ChevronUp, Check, Undo2 } from 'lucide-react';
+import { CheckCircle2, Lightbulb, BookOpen, HelpCircle, PlayCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

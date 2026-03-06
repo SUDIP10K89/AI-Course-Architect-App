@@ -184,7 +184,7 @@ export const checkDetailedHealth = async (): Promise<ApiResponse<unknown>> => {
 };
 
 export { connectToCourseProgress } from '@/utils/sse';
-export type { SSEProgressEvent, SSECompleteEvent, SSEErrorEvent } from '@/utils/sse';
+export type { SSEProgressEvent, SSECompleteEvent, SSEErrorEvent, SSEWarningEvent } from '@/utils/sse';
 
 export default {
   generateCourse,

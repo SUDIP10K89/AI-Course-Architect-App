@@ -11,6 +11,7 @@ import { Loader2, AlertCircle, RefreshCw, PlayCircle, GraduationCap } from 'luci
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
 import { useCourse } from '@/contexts/CourseContext';
 import Header from './Layout/Header';
 import Sidebar from './Layout/Sidebar';
@@ -117,6 +118,11 @@ const CourseViewer: React.FC = () => {
           (data) => {
             console.error('Continue error:', data.error);
             setIsContinuing(false);
+            stopPolling();
+            toast.error(data.error, { description: 'Generation stopped' });
+          },
+          (data) => {
+            toast.warning(data.message, { description: 'Generation will continue' });
           }
         );
       }

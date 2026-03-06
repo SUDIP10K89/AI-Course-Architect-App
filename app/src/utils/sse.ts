@@ -23,7 +23,12 @@ export interface SSEErrorEvent {
   timestamp: string;
 }
 
-export type SSEEventType = 'progress' | 'complete' | 'error' | 'connected';
+export interface SSEWarningEvent {
+  message: string;
+  timestamp: string;
+}
+
+export type SSEEventType = 'progress' | 'complete' | 'error' | 'warning' | 'connected';
 
 /**
  * Connect to SSE endpoint for course generation progress
@@ -31,13 +36,15 @@ export type SSEEventType = 'progress' | 'complete' | 'error' | 'connected';
  * @param onProgress - Callback for progress updates
  * @param onComplete - Callback when generation is complete
  * @param onError - Callback for error events
+ * @param onWarning - Callback for non-fatal warning events (e.g. quota limits)
  * @returns cleanup function to disconnect
  */
 export const connectToCourseProgress = (
   courseId: string,
   onProgress?: (data: SSEProgressEvent) => void,
   onComplete?: (data: SSECompleteEvent) => void,
-  onError?: (data: SSEErrorEvent) => void
+  onError?: (data: SSEErrorEvent) => void,
+  onWarning?: (data: SSEWarningEvent) => void
 ): (() => void) => {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const eventSource = new EventSource(`${apiUrl}/sse/courses/${courseId}/events`);
@@ -76,6 +83,16 @@ export const connectToCourseProgress = (
       onError?.(data);
     } catch (error) {
       console.error('Failed to parse SSE error event:', error);
+    }
+  });
+
+  eventSource.addEventListener('warning', (event) => {
+    try {
+      const data = JSON.parse((event as MessageEvent).data) as SSEWarningEvent;
+      console.warn('SSE Warning:', data);
+      onWarning?.(data);
+    } catch (error) {
+      console.error('Failed to parse SSE warning event:', error);
     }
   });
 

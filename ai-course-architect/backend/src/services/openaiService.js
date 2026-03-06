@@ -229,7 +229,7 @@ const parseJSONResponse = (content) => {
 export const generateCourseOutline = async (topic, userApiSettings = null) => {
   // Get the appropriate client based on user settings
   const { client, model } = getOpenAIClient(userApiSettings);
-  
+
   // Validate input
   if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
     throw new Error('Topic is required and must be a non-empty string');
@@ -243,7 +243,7 @@ export const generateCourseOutline = async (topic, userApiSettings = null) => {
       console.log(`🔄 Generating course outline for "${trimmedTopic}" (attempt ${attempt}/${MAX_RETRIES})...`);
 
       console.log(`📡 Making API call with model: ${model}`);
-      
+
       const response = await client.chat.completions.create({
         model: model,
         messages: [
@@ -278,7 +278,7 @@ Structure the content for optimal learning progression.`
       }
 
       const firstChoice = response.choices[0];
-      
+
       // Check for refusal or other special cases
       if (firstChoice.finish_reason === 'content_filter') {
         throw new Error('Content filtered by API safety policies');
@@ -332,7 +332,7 @@ Structure the content for optimal learning progression.`
       lastError = error;
 
       const status = error?.response?.status;
-      
+
       // Handle authentication errors - don't retry
       if (status === 401) {
         console.error(`❌ Unauthorized (${status}) - invalid or missing OpenAI API key`);
@@ -363,12 +363,27 @@ Structure the content for optimal learning progression.`
  * @param {string} moduleTitle - Parent module title (for context)
  * @param {string} courseTitle - Parent course title (for context)
  * @param {Object} userApiSettings - User's API settings (optional)
+ * @param {Object} context - Rich context for better content generation (optional)
+ * @param {string} context.difficulty - Course difficulty level
+ * @param {string} context.courseDescription - Course description
+ * @param {number} context.moduleIndex - Zero-based index of this module
+ * @param {number} context.totalModules - Total number of modules in the course
+ * @param {number} context.microTopicIndex - Zero-based index of this microtopic in its module
+ * @param {number} context.totalMicroTopics - Total microtopics in this module
+ * @param {string[]} context.siblingTopics - All microtopic titles in this module
+ * @param {string[]} context.allModuleTitles - All module titles in the course
+ * @param {string[]} context.previousTopics - Microtopic titles before this one in the module
+ * @param {string[]} context.nextTopics - Microtopic titles after this one in the module
+ * @param {string|null} context.previousModuleTitle - Title of the preceding module
+ * @param {string|null} context.nextModuleTitle - Title of the following module
+ * @param {string[]} context.previousContentSummaries - Brief summaries of previously generated lessons
+ * @param {string[]} context.currentModuleSummaries - Summaries of already-generated lessons in this module
  * @returns {Promise<Object>} Lesson content object
  */
-export const generateLessonContent = async (topic, moduleTitle, courseTitle, userApiSettings = null) => {
+export const generateLessonContent = async (topic, moduleTitle, courseTitle, userApiSettings = null, context = {}) => {
   // Get the appropriate client based on user settings
   const { client, model } = getOpenAIClient(userApiSettings);
-  
+
   // Validate input
   if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
     throw new Error('Topic is required and must be a non-empty string');
@@ -383,6 +398,62 @@ export const generateLessonContent = async (topic, moduleTitle, courseTitle, use
     try {
       console.log(`🔄 Generating lesson content for "${trimmedTopic}" (attempt ${attempt}/${MAX_RETRIES})...`);
 
+      // Build rich context block from the context parameter
+      const contextLines = [];
+
+      if (context.difficulty) {
+        contextLines.push(`- Difficulty Level: ${context.difficulty}`);
+      }
+      if (context.courseDescription) {
+        contextLines.push(`- Course Description: ${context.courseDescription}`);
+      }
+      if (context.moduleIndex != null && context.totalModules != null) {
+        contextLines.push(`- This is Module ${context.moduleIndex + 1} of ${context.totalModules}: "${trimmedModuleTitle}"`);
+      }
+      if (context.microTopicIndex != null && context.totalMicroTopics != null) {
+        contextLines.push(`- This is Lesson ${context.microTopicIndex + 1} of ${context.totalMicroTopics} in this module`);
+      }
+      if (context.allModuleTitles?.length) {
+        contextLines.push(`- All modules in course: ${context.allModuleTitles.map((t, i) => `${i + 1}. ${t}`).join(', ')}`);
+      }
+      if (context.siblingTopics?.length) {
+        contextLines.push(`- All lessons in this module: ${context.siblingTopics.map((t, i) => `${i + 1}. ${t}`).join(', ')}`);
+      }
+      if (context.previousTopics?.length) {
+        contextLines.push(`- Previous lessons in this module: ${context.previousTopics.join(', ')}`);
+      } else if (context.microTopicIndex === 0) {
+        contextLines.push(`- This is the FIRST lesson in this module`);
+      }
+      if (context.nextTopics?.length) {
+        contextLines.push(`- Upcoming lessons in this module: ${context.nextTopics.join(', ')}`);
+      } else if (context.microTopicIndex != null && context.totalMicroTopics != null && context.microTopicIndex === context.totalMicroTopics - 1) {
+        contextLines.push(`- This is the LAST lesson in this module`);
+      }
+      if (context.previousModuleTitle) {
+        contextLines.push(`- Previous module: "${context.previousModuleTitle}"`);
+      }
+      if (context.nextModuleTitle) {
+        contextLines.push(`- Next module: "${context.nextModuleTitle}"`);
+      }
+
+      const structuralContextBlock = contextLines.length > 0
+        ? `\n\nCourse Structure Context:\n${contextLines.join('\n')}\n\nIMPORTANT INSTRUCTIONS:\n- Do NOT repeat content that would be covered in other listed lessons.\n- Tailor depth and complexity to the "${context.difficulty || 'beginner'}" level.\n- Build upon concepts from previous lessons where applicable.\n- Prepare the learner for upcoming topics without teaching them in detail.`
+        : '';
+
+      const summaryLines = [];
+      if (context.previousContentSummaries?.length) {
+        summaryLines.push(...context.previousContentSummaries);
+      }
+      if (context.currentModuleSummaries?.length) {
+        // Avoid duplicates if currentModuleSummaries overlap with previousContentSummaries
+        for (const s of context.currentModuleSummaries) {
+          if (!summaryLines.includes(s)) summaryLines.push(s);
+        }
+      }
+      const summaryContextBlock = summaryLines.length > 0
+        ? `\n\nPreviously covered content (DO NOT repeat these concepts):\n${summaryLines.map(s => `- ${s}`).join('\n')}`
+        : '';
+
       const response = await client.chat.completions.create({
         model: model,
         messages: [
@@ -393,7 +464,7 @@ export const generateLessonContent = async (topic, moduleTitle, courseTitle, use
 
 Course: "${trimmedCourseTitle}"
 Module: "${trimmedModuleTitle}"
-Micro-topic: "${trimmedTopic}"
+Micro-topic: "${trimmedTopic}"${structuralContextBlock}${summaryContextBlock}
 
 Make the content engaging, educational, and suitable for self-paced learning.`
           },
@@ -410,7 +481,7 @@ Make the content engaging, educational, and suitable for self-paced learning.`
       }
 
       const firstChoice = response.choices[0];
-      
+
       // Check for refusal or other special cases
       if (firstChoice.finish_reason === 'content_filter') {
         throw new Error('Content filtered by API safety policies');
@@ -448,7 +519,7 @@ Make the content engaging, educational, and suitable for self-paced learning.`
         console.warn('⚠️ Invalid practiceQuestions, using fallback');
         lesson.practiceQuestions = [{ question: 'Question pending', answer: 'Answer pending' }];
       }
-      
+
       // Validate each practice question has required fields
       lesson.practiceQuestions = lesson.practiceQuestions.map((pq, index) => {
         if (!pq.question || !pq.answer) {
@@ -465,10 +536,58 @@ Make the content engaging, educational, and suitable for self-paced learning.`
     } catch (error) {
       lastError = error;
 
-      const status = error?.response?.status;
+      const status = error?.response?.status || error?.status;
+      const errorMessage = error?.message || '';
+      const errorMessageLower = errorMessage.toLowerCase();
+
       if (status === 401) {
         console.error(`❌ Unauthorized (${status}) - invalid or missing OpenAI API key`);
         throw new Error('OpenAI API unauthorized - please verify your API key');
+      }
+
+      // Detect any 429-class rate limit — check both HTTP status and message prefix
+      const is429 = status === 429 || errorMessage.startsWith('429 ');
+
+      if (is429) {
+        // Detect exhausted daily/monthly quota vs. transient per-minute rate limit
+        const isQuotaExceeded =
+          error?.response?.data?.error?.type === 'insufficient_quota' ||
+          errorMessageLower.includes('quota') ||
+          errorMessageLower.includes('billing') ||
+          errorMessageLower.includes('free-models-per-day') ||
+          (errorMessageLower.includes('add') && errorMessageLower.includes('credits')) ||
+          errorMessageLower.includes('daily limit') ||
+          errorMessageLower.includes('monthly limit');
+
+        if (isQuotaExceeded) {
+          console.error('❌ OpenAI daily/monthly quota exceeded');
+          // Extract the original message for the user if it's informative
+          const detail = errorMessage.includes('Add') ? ` (${errorMessage.split('.')[0].trim()})` : '';
+          const quotaError = new Error(
+            `OpenAI API rate limit exceeded: your free daily quota has been reached.${detail} Add credits or upgrade your plan at platform.openai.com to continue generating content.`
+          );
+          quotaError.code = 'OPENAI_QUOTA_EXCEEDED';
+          throw quotaError;
+        }
+
+        // Regular per-minute rate limit — still retryable
+        console.warn('⚠️ OpenAI per-minute rate limit hit — will retry after delay');
+      }
+
+      // Detect context/token limit errors
+      if (
+        (status === 400 || errorMessage.startsWith('400 ')) &&
+        (error?.response?.data?.error?.code === 'context_length_exceeded' ||
+          errorMessageLower.includes('context_length') ||
+          errorMessageLower.includes('maximum context length') ||
+          errorMessageLower.includes('context window'))
+      ) {
+        console.error('❌ OpenAI token/context limit exceeded');
+        const tokenError = new Error(
+          'OpenAI token limit exceeded for this request. The lesson context is too large. Content generation will continue for remaining topics.'
+        );
+        tokenError.code = 'OPENAI_TOKEN_LIMIT';
+        throw tokenError;
       }
 
       console.error(`❌ Attempt ${attempt} failed:`, error.message);
@@ -499,7 +618,7 @@ Make the content engaging, educational, and suitable for self-paced learning.`
 export const regenerateModule = async (topic, moduleTitle, existingModules = [], userApiSettings = null) => {
   // Get the appropriate client based on user settings
   const { client, model } = getOpenAIClient(userApiSettings);
-  
+
   // Validate input
   if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
     throw new Error('Topic is required and must be a non-empty string');
@@ -539,7 +658,7 @@ Ensure the new module fits well with the existing course structure and maintains
 
     const firstChoice = response.choices[0];
     const content = firstChoice.message?.content;
-    
+
     if (!content) {
       console.error('❌ Empty content in API response:', JSON.stringify(firstChoice).slice(0, 500));
       throw new Error('Empty response content from OpenAI');

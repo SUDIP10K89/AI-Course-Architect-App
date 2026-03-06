@@ -16,7 +16,7 @@ export const generateCourse = async (req, res, next) => {
   try {
     const { topic } = req.body;
     const user = req.user;
-    console.log("Tgis is user",user)
+    console.log("Tgis is user", user)
     if (!user) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
@@ -46,7 +46,7 @@ export const generateCourse = async (req, res, next) => {
     }
 
     const course = await courseService.generateCourse(trimmedTopic, user._id);
-    
+
     console.log('🔍 generateCourse controller - Course created with ID:', course._id);
 
     res.status(201).json({
@@ -211,11 +211,11 @@ export const getCourseStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const user = req.user;
-    
+
     console.log('🔍 getCourseStatus - Request params:', { id, userId: user?._id });
-    
+
     const result = await courseService.getCourseWithStatus(id);
-    
+
     console.log('🔍 getCourseStatus - Course found:', !!result.course);
     console.log('🔍 getCourseStatus - Generation status:', result.generationStatus);
 
@@ -396,7 +396,7 @@ export const continueCourseGeneration = async (req, res, next) => {
   try {
     const { id: courseId } = req.params;
     const user = req.user;
-    
+
     if (!user) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
@@ -405,22 +405,22 @@ export const continueCourseGeneration = async (req, res, next) => {
     if (!course) {
       return res.status(404).json({ success: false, error: 'Course not found' });
     }
-    
+
     const ownerId = course.createdBy?._id || course.createdBy;
     if (String(ownerId) !== String(user._id)) {
       return res.status(403).json({ success: false, error: 'Forbidden' });
     }
 
-    // Start content generation in background
-    const result = await courseService.continueCourseContent(courseId);
+    // Start content generation in background (don't await — SSE will stream progress)
+    courseService.continueCourseContent(courseId).catch(error => {
+      console.error('Background continue generation failed:', error.message);
+    });
 
     res.json({
       success: true,
-      message: result.message,
+      message: 'Content generation resumed',
       data: {
         courseId,
-        processedItems: result.processedItems,
-        totalItems: result.totalItems,
       },
     });
 

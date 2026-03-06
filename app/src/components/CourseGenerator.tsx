@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
 import * as courseApi from '@/api/courseApi';
 
 const SUGGESTED_TOPICS = [
@@ -54,7 +55,14 @@ const CourseGenerator: React.FC = () => {
             setProgress(100); setProgressMessage('Course generation complete!');
             setTimeout(() => navigate(`/courses/${courseId}`), 1500);
           },
-          (data) => { setError(data.error); }
+          (data) => {
+            setError(data.error);
+            setIsGenerating(false);
+            toast.error(data.error, { description: 'Course generation stopped' });
+          },
+          (data) => {
+            toast.warning(data.message, { description: 'Generation will continue' });
+          }
         );
 
       } else {

@@ -44,14 +44,14 @@ const isCacheValid = (entry) => {
  */
 const formatDuration = (duration) => {
   if (!duration) return '';
-  
+
   const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return '';
-  
+
   const hours = parseInt(match[1] || 0, 10);
   const minutes = parseInt(match[2] || 0, 10);
   const seconds = parseInt(match[3] || 0, 10);
-  
+
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
@@ -65,16 +65,16 @@ const formatDuration = (duration) => {
  */
 const getBestThumbnail = (thumbnails) => {
   if (!thumbnails) return '';
-  
+
   // Prefer higher quality thumbnails
   const qualities = ['maxres', 'standard', 'high', 'medium', 'default'];
-  
+
   for (const quality of qualities) {
     if (thumbnails[quality]) {
       return thumbnails[quality].url;
     }
   }
-  
+
   return '';
 };
 
@@ -89,14 +89,14 @@ export const searchVideos = async (query, maxResults = YOUTUBE_CONFIG.MAX_RESULT
     // Check cache first
     const cacheKey = getCacheKey(query);
     const cached = videoCache.get(cacheKey);
-    
+
     if (isCacheValid(cached)) {
       console.log(`📦 Cache hit for query: "${query}"`);
       return cached.data;
     }
-    
+
     console.log(`🔍 Searching YouTube for: "${query}"`);
-    
+
     // Search for videos
     const searchResponse = await youtube.search.list({
       part: 'snippet',
@@ -152,20 +152,42 @@ export const searchVideos = async (query, maxResults = YOUTUBE_CONFIG.MAX_RESULT
     });
 
     console.log(`✅ Found ${videos.length} videos for "${query}"`);
-    
+
     return videos;
-    
+
   } catch (error) {
     console.error('❌ YouTube search error:', error.message);
-    
-    // Handle specific API errors
+
+    // Detect quota exhaustion — surface to caller so user can be notified
     if (error.code === 403) {
-      console.error('   YouTube API quota exceeded or invalid API key');
-    } else if (error.code === 400) {
+      const isQuotaExceeded =
+        error?.errors?.[0]?.reason === 'quotaExceeded' ||
+        error?.errors?.[0]?.reason === 'dailyLimitExceeded' ||
+        error?.message?.toLowerCase().includes('quota') ||
+        error?.message?.toLowerCase().includes('daily limit');
+
+      if (isQuotaExceeded) {
+        console.error('❌ YouTube API daily quota exceeded');
+        const quotaError = new Error(
+          'YouTube API daily quota exceeded. Video recommendations will be unavailable until the quota resets (midnight Pacific Time). Course content generation will continue without videos.'
+        );
+        quotaError.code = 'YOUTUBE_QUOTA_EXCEEDED';
+        throw quotaError;
+      }
+
+      console.error('   YouTube API access denied — invalid API key or insufficient permissions');
+      const accessError = new Error(
+        'YouTube API access denied. Please check your YouTube API key in the server configuration. Video recommendations will be skipped.'
+      );
+      accessError.code = 'YOUTUBE_ACCESS_DENIED';
+      throw accessError;
+    }
+
+    if (error.code === 400) {
       console.error('   Invalid request parameters');
     }
-    
-    // Return empty array on error - don't break the course generation
+
+    // Return empty array on other errors - don't break the course generation
     return [];
   }
 };
@@ -178,27 +200,27 @@ export const searchVideos = async (query, maxResults = YOUTUBE_CONFIG.MAX_RESULT
  */
 export const searchEducationalVideos = async (topic, microTopic = '') => {
   // Build educational-focused query
-  const baseQuery = microTopic 
+  const baseQuery = microTopic
     ? `${topic} ${microTopic} tutorial`
     : `${topic} course tutorial`;
-  
+
   const educationalKeywords = ['tutorial', 'course', 'explained', 'introduction', 'basics'];
-  
+
   // Try the main query first
   let videos = await searchVideos(baseQuery);
-  
+
   // If no results, try with educational keywords
   if (videos.length === 0) {
     for (const keyword of educationalKeywords) {
-      const altQuery = microTopic 
+      const altQuery = microTopic
         ? `${topic} ${microTopic} ${keyword}`
         : `${topic} ${keyword}`;
-      
+
       videos = await searchVideos(altQuery);
       if (videos.length > 0) break;
     }
   }
-  
+
   return videos;
 };
 
@@ -209,15 +231,15 @@ export const searchEducationalVideos = async (topic, microTopic = '') => {
  */
 export const batchSearchVideos = async (topics) => {
   const results = {};
-  
+
   // Process sequentially to avoid rate limits
   for (const topic of topics) {
     results[topic] = await searchEducationalVideos(topic);
-    
+
     // Small delay between requests
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  
+
   return results;
 };
 
@@ -238,7 +260,7 @@ export const getVideoDetails = async (videoId) => {
     }
 
     const video = response.data.items[0];
-    
+
     return {
       videoId: video.id,
       title: video.snippet.title,
@@ -250,7 +272,7 @@ export const getVideoDetails = async (videoId) => {
       likeCount: video.statistics.likeCount,
       publishedAt: video.snippet.publishedAt,
     };
-    
+
   } catch (error) {
     console.error('Error fetching video details:', error.message);
     return null;

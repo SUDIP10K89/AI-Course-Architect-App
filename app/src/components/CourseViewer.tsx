@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Loader2, AlertCircle, RefreshCw, PlayCircle } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, PlayCircle, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -40,7 +40,7 @@ const CourseViewer: React.FC = () => {
   // Find the first microtopic that doesn't have content (currently being generated)
   const currentGeneratingMicroTopic = React.useMemo(() => {
     if (!currentCourse?.course || generationStatus?.isComplete) return null;
-    
+
     for (const module of currentCourse.course.modules) {
       for (const topic of module.microTopics) {
         if (!topic.content || topic.videos.length === 0) {
@@ -64,7 +64,7 @@ const CourseViewer: React.FC = () => {
       pollingStartedRef.current = true;
       pollGenerationStatus(courseId);
     }
-    
+
     // Cleanup: stop polling when component unmounts
     return () => {
       stopPolling();
@@ -99,27 +99,21 @@ const CourseViewer: React.FC = () => {
 
   const handleContinueGeneration = async () => {
     if (!courseId) return;
-    
+
     setIsContinuing(true);
     try {
-      // Call the continue generation API
       const response = await courseApi.continueCourseGeneration(courseId);
-      
+
       if (response.success) {
-        // Connect to SSE for progress updates
         courseApi.connectToCourseProgress(
           courseId,
-          // Progress handler
           (data) => {
             console.log('Continue progress:', data);
           },
-          // Complete handler
           () => {
-            // Reload course when done
             loadCourse(courseId);
             setIsContinuing(false);
           },
-          // Error handler
           (data) => {
             console.error('Continue error:', data.error);
             setIsContinuing(false);
@@ -139,11 +133,13 @@ const CourseViewer: React.FC = () => {
   // Loading state
   if (isLoading && !currentCourse) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+            <div className="inline-flex h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-purple-500 items-center justify-center shadow-glow animate-pulse-soft">
+              <GraduationCap className="h-8 w-8 text-white" />
+            </div>
             <p className="text-lg font-medium">Loading course...</p>
           </div>
         </div>
@@ -154,7 +150,7 @@ const CourseViewer: React.FC = () => {
   // Error state
   if (error && !currentCourse) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <div className="flex-1 flex items-center justify-center p-4">
           <Alert variant="destructive" className="max-w-md">
@@ -176,7 +172,7 @@ const CourseViewer: React.FC = () => {
   // No course found
   if (!currentCourse?.course) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <div className="flex-1 flex items-center justify-center p-4">
           <Alert className="max-w-md">
@@ -194,7 +190,7 @@ const CourseViewer: React.FC = () => {
   const { course } = currentCourse;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} isMenuOpen={sidebarOpen} />
 
       <div className="flex-1 flex overflow-hidden">
@@ -212,19 +208,20 @@ const CourseViewer: React.FC = () => {
         <main className="flex-1 overflow-auto bg-background">
           {/* Generation Progress Bar */}
           {generationStatus && !generationStatus.isComplete && (
-            <div className="sticky top-0 z-30 bg-background border-b p-4">
+            <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50 p-4">
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Generating course content...</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground font-medium">
                       {generationStatus.generatedCount} / {generationStatus.totalCount}
                     </span>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={handleContinueGeneration}
                       disabled={isContinuing}
+                      className="border-border/50"
                     >
                       {isContinuing ? (
                         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -235,10 +232,15 @@ const CourseViewer: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-                <Progress value={generationStatus.percentage} className="h-2" />
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
+                    style={{ width: `${generationStatus.percentage}%` }}
+                  />
+                </div>
                 {currentGeneratingMicroTopic && (
                   <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                    <span className="animate-pulse">●</span>
+                    <span className="animate-pulse text-primary">●</span>
                     Currently generating: <span className="font-medium text-foreground">{currentGeneratingMicroTopic.title}</span>
                   </p>
                 )}
@@ -267,6 +269,9 @@ const CourseViewer: React.FC = () => {
                 />
               ) : (
                 <div className="text-center py-12">
+                  <div className="inline-flex h-16 w-16 rounded-2xl bg-accent items-center justify-center mb-4">
+                    <GraduationCap className="h-8 w-8 text-accent-foreground/50" />
+                  </div>
                   <p className="text-muted-foreground">Select a topic from the sidebar to start learning</p>
                 </div>
               )}

@@ -66,26 +66,24 @@ const SettingsPage: React.FC = () => {
   const handleToggleCustomProvider = async (checked: boolean) => {
     try {
       setUseCustomProvider(checked);
-      
+
       const settingsPayload = {
-        apiKey: '', // Empty - backend will preserve existing
+        apiKey: '',
         model,
         baseUrl,
         useCustomProvider: checked,
       };
-      
+
       const response = await settingsApi.updateSettings(settingsPayload);
 
       if (response.success) {
         setMessage({ type: 'success', text: `Custom AI provider ${checked ? 'enabled' : 'disabled'} successfully!` });
       } else {
         setMessage({ type: 'error', text: response.error || 'Failed to update setting' });
-        // Revert the toggle if save failed
         setUseCustomProvider(!checked);
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update setting' });
-      // Revert the toggle if save failed
       setUseCustomProvider(!checked);
     }
   };
@@ -94,28 +92,19 @@ const SettingsPage: React.FC = () => {
     try {
       setIsSaving(true);
       setMessage(null);
-      
-      // Always send the apiKey field - backend will preserve existing if empty
+
       const settingsPayload = {
-        apiKey: apiKey, // Can be empty string or actual key
+        apiKey: apiKey,
         model,
         baseUrl,
         useCustomProvider,
       };
-      
-      console.log('📤 Frontend sending settings:', { 
-        model, 
-        baseUrl, 
-        useCustomProvider, 
-        hasApiKey: !!apiKey,
-        apiKeyLength: apiKey?.length 
-      });
-      
+
       const response = await settingsApi.updateSettings(settingsPayload);
 
       if (response.success) {
         setMessage({ type: 'success', text: 'Settings saved successfully!' });
-        setApiKey(''); // Clear the input after saving
+        setApiKey('');
         setHasApiKey(true);
       } else {
         setMessage({ type: 'error', text: response.error || 'Failed to save settings' });
@@ -136,9 +125,9 @@ const SettingsPage: React.FC = () => {
     try {
       setIsTesting(true);
       setMessage(null);
-      
+
       const response = await settingsApi.testSettings(apiKey, model, baseUrl);
-      
+
       if (response.success) {
         setMessage({ type: 'success', text: 'API connection successful!' });
       } else {
@@ -152,27 +141,30 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
       <main className="flex-1 py-8 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <Settings className="h-7 w-7" />
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-sm">
+                <Settings className="h-5 w-5 text-white" />
+              </div>
               Settings
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-2 ml-[52px]">
               Manage your account settings and preferences
             </p>
           </div>
 
           <div className="space-y-6">
             {/* Account Information */}
-            <Card>
+            <Card className="border-border/50 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-purple-500" />
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
+                  <User className="h-5 w-5 text-primary" />
                   Account Information
                 </CardTitle>
                 <CardDescription>
@@ -193,10 +185,11 @@ const SettingsPage: React.FC = () => {
             </Card>
 
             {/* Appearance */}
-            <Card>
+            <Card className="border-border/50 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500" />
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                  {theme === 'light' ? <Moon className="h-5 w-5 text-purple-500" /> : <Sun className="h-5 w-5 text-amber-500" />}
                   Appearance
                 </CardTitle>
                 <CardDescription>
@@ -215,7 +208,7 @@ const SettingsPage: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={toggleTheme}
-                    className="gap-2"
+                    className="gap-2 border-border/50"
                   >
                     {theme === 'light' ? (
                       <>
@@ -234,10 +227,11 @@ const SettingsPage: React.FC = () => {
             </Card>
 
             {/* AI Configuration */}
-            <Card>
+            <Card className="border-border/50 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-rose-500" />
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Cpu className="h-5 w-5" />
+                  <Cpu className="h-5 w-5 text-pink-500" />
                   AI Configuration
                 </CardTitle>
                 <CardDescription>
@@ -275,7 +269,7 @@ const SettingsPage: React.FC = () => {
                         {/* API Key */}
                         <div className="space-y-2">
                           <Label htmlFor="api-key" className="flex items-center gap-2">
-                            <Key className="h-4 w-4" />
+                            <Key className="h-4 w-4 text-primary" />
                             API Key
                           </Label>
                           <div className="relative">
@@ -285,12 +279,12 @@ const SettingsPage: React.FC = () => {
                               placeholder={hasApiKey ? '••••••••••••••••' : 'Enter your API key'}
                               value={apiKey}
                               onChange={(e) => setApiKey(e.target.value)}
-                              className="pr-10"
+                              className="pr-10 border-border/50 focus:border-primary/50"
                             />
                             <button
                               type="button"
                               onClick={() => setShowApiKey(!showApiKey)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                             >
                               {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -305,7 +299,7 @@ const SettingsPage: React.FC = () => {
                         {/* Model */}
                         <div className="space-y-2">
                           <Label htmlFor="model" className="flex items-center gap-2">
-                            <Cpu className="h-4 w-4" />
+                            <Cpu className="h-4 w-4 text-primary" />
                             Model
                           </Label>
                           <Input
@@ -314,6 +308,7 @@ const SettingsPage: React.FC = () => {
                             placeholder="gemini-2.5-flash"
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
+                            className="border-border/50 focus:border-primary/50"
                           />
                           <p className="text-xs text-muted-foreground">
                             Default: gemini-2.5-flash
@@ -323,7 +318,7 @@ const SettingsPage: React.FC = () => {
                         {/* Base URL */}
                         <div className="space-y-2">
                           <Label htmlFor="base-url" className="flex items-center gap-2">
-                            <Globe className="h-4 w-4" />
+                            <Globe className="h-4 w-4 text-primary" />
                             Base URL
                           </Label>
                           <Input
@@ -332,6 +327,7 @@ const SettingsPage: React.FC = () => {
                             placeholder="https://generativelanguage.googleapis.com/v1beta/openai/"
                             value={baseUrl}
                             onChange={(e) => setBaseUrl(e.target.value)}
+                            className="border-border/50 focus:border-primary/50"
                           />
                           <p className="text-xs text-muted-foreground">
                             Default: https://generativelanguage.googleapis.com/v1beta/openai/
@@ -340,11 +336,10 @@ const SettingsPage: React.FC = () => {
 
                         {/* Message Display */}
                         {message && (
-                          <div className={`flex items-center gap-2 p-3 rounded-md ${
-                            message.type === 'success' 
-                              ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
-                              : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                          }`}>
+                          <div className={`flex items-center gap-2 p-3 rounded-lg ${message.type === 'success'
+                              ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                              : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800'
+                            }`}>
                             {message.type === 'success' ? (
                               <CheckCircle className="h-4 w-4" />
                             ) : (
@@ -360,7 +355,7 @@ const SettingsPage: React.FC = () => {
                             onClick={handleTestConnection}
                             disabled={isTesting || !apiKey}
                             variant="outline"
-                            className="flex-1"
+                            className="flex-1 border-border/50"
                           >
                             {isTesting ? (
                               <>
@@ -374,7 +369,7 @@ const SettingsPage: React.FC = () => {
                           <Button
                             onClick={handleSaveSettings}
                             disabled={isSaving}
-                            className="flex-1"
+                            className="flex-1 bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90"
                           >
                             {isSaving ? (
                               <>
@@ -394,10 +389,10 @@ const SettingsPage: React.FC = () => {
             </Card>
 
             {/* Logout */}
-            <Card>
+            <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-5 w-5 text-muted-foreground" />
                   Sign Out
                 </CardTitle>
                 <CardDescription>
@@ -420,10 +415,10 @@ const SettingsPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-8 px-4">
+      <footer className="border-t border-border/50 py-8 px-4">
         <div className="max-w-5xl mx-auto text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 AI Course Architect. All rights reserved.
+            © {new Date().getFullYear()} AI Course Architect. All rights reserved.
           </p>
         </div>
       </footer>

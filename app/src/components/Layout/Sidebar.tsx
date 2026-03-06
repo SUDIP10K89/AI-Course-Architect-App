@@ -58,13 +58,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     return (
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-72 bg-background border-r transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-72 bg-background border-r border-border/50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
           <div className="text-center">
-            <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <div className="inline-flex h-16 w-16 rounded-2xl bg-accent items-center justify-center mb-4">
+              <BookOpen className="h-8 w-8 text-accent-foreground/50" />
+            </div>
             <p>No course selected</p>
           </div>
         </div>
@@ -77,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden"
           onClick={onClose}
         />
       )}
@@ -85,25 +87,25 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-72 bg-background border-r transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col',
+          'fixed inset-y-0 left-0 z-40 w-72 bg-background border-r border-border/50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Course Header */}
-        <div className="p-4 border-b">
+        <div className="p-4 border-b border-border/50">
           <h2 className="font-semibold text-sm line-clamp-2" title={course.title}>
             {course.title}
           </h2>
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <div className="flex-1">
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary transition-all duration-300"
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-300"
                   style={{ width: `${course.progress.percentage}%` }}
                 />
               </div>
             </div>
-            <span>{course.progress.percentage}%</span>
+            <span className="font-semibold text-primary">{course.progress.percentage}%</span>
           </div>
         </div>
 
@@ -111,18 +113,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         <ScrollArea className="flex-1">
           <div className="p-2">
             {course.modules.map((module: Module, moduleIndex: number) => (
-              <div key={module._id} className="mb-2">
+              <div key={module._id} className="mb-1">
                 {/* Module Header */}
                 <button
                   onClick={() => toggleModule(module._id)}
                   className={cn(
-                    'w-full flex items-center gap-2 p-2 rounded-md text-sm font-medium transition-colors',
-                    'hover:bg-accent hover:text-accent-foreground',
-                    currentModuleId === module._id && 'bg-accent'
+                    'w-full flex items-center gap-2 p-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                    'hover:bg-accent/50 hover:text-accent-foreground',
+                    currentModuleId === module._id && 'bg-accent/70 text-accent-foreground'
                   )}
                 >
                   {expandedModules.has(module._id) ? (
-                    <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                    <ChevronDown className="h-4 w-4 flex-shrink-0 text-primary" />
                   ) : (
                     <ChevronRight className="h-4 w-4 flex-shrink-0" />
                   )}
@@ -133,21 +135,21 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* Micro-Topics */}
                 {expandedModules.has(module._id) && (
-                  <div className="ml-6 mt-1 space-y-1">
+                  <div className="ml-4 mt-0.5 space-y-0.5 border-l-2 border-border/50 pl-3">
                     {module.microTopics.map((topic: MicroTopic) => (
                       <button
                         key={topic._id}
                         onClick={() => handleMicroTopicClick(module._id, topic._id)}
                         className={cn(
-                          'w-full flex items-center gap-2 p-2 rounded-md text-xs transition-colors text-left',
-                          'hover:bg-accent hover:text-accent-foreground',
+                          'w-full flex items-center gap-2 p-2 rounded-md text-xs transition-all duration-200 text-left',
+                          'hover:bg-accent/50 hover:text-accent-foreground',
                           currentMicroTopicId === topic._id
-                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                            ? 'bg-primary/10 text-primary font-medium border-l-2 border-primary -ml-[3px] pl-[11px]'
                             : 'text-muted-foreground'
                         )}
                       >
                         {topic.isCompleted ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-green-500" />
+                          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />
                         ) : topic.content ? (
                           <PlayCircle className="h-3.5 w-3.5 flex-shrink-0" />
                         ) : (

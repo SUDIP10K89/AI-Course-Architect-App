@@ -97,11 +97,11 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
 
   const getStatusBadge = (progress: number) => {
     if (progress === 0) {
-      return <Badge variant="secondary">Not Started</Badge>;
+      return <Badge variant="secondary" className="bg-muted text-muted-foreground">Not Started</Badge>;
     } else if (progress === 100) {
-      return <Badge variant="default" className="bg-green-600">Completed</Badge>;
+      return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">Completed</Badge>;
     } else {
-      return <Badge variant="default">In Progress</Badge>;
+      return <Badge className="bg-accent text-accent-foreground border-0">In Progress</Badge>;
     }
   };
 
@@ -123,13 +123,18 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
 
   if (courses.length === 0) {
     return (
-      <div className="text-center py-12">
-        <BookOpen className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+      <div className="text-center py-16">
+        <div className="inline-flex h-20 w-20 rounded-2xl bg-accent items-center justify-center mb-4">
+          <BookOpen className="h-10 w-10 text-accent-foreground/50" />
+        </div>
         <h3 className="text-lg font-medium mb-2">No courses yet</h3>
-        <p className="text-muted-foreground mb-4">
+        <p className="text-muted-foreground mb-6">
           Generate your first course to start learning
         </p>
-        <Button onClick={() => navigate('/')}>
+        <Button
+          onClick={() => navigate('/')}
+          className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90"
+        >
           <GraduationCap className="h-4 w-4 mr-2" />
           Create Course
         </Button>
@@ -146,7 +151,7 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
           placeholder="Search courses..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 border-border/50 focus:border-primary/50"
         />
       </div>
 
@@ -160,9 +165,12 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
           {filteredCourses.map((course) => (
             <Card
               key={course._id}
-              className="group cursor-pointer hover:shadow-md transition-shadow"
+              className="group cursor-pointer card-hover relative overflow-hidden border-border/50 hover:border-primary/20 transition-all duration-300"
               onClick={() => navigate(`/courses/${course._id}`)}
             >
+              {/* Gradient top border on hover */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 pr-2">
@@ -173,7 +181,7 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 -mr-2"
+                        className="h-8 w-8 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="h-4 w-4" />
@@ -223,9 +231,14 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{course.progress.percentage}%</span>
+                    <span className="font-semibold text-primary">{course.progress.percentage}%</span>
                   </div>
-                  <Progress value={course.progress.percentage} className="h-2" />
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-1.5 rounded-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-500"
+                      style={{ width: `${course.progress.percentage}%` }}
+                    />
+                  </div>
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
                     <div className="flex items-center gap-1">

@@ -10,7 +10,6 @@ import { useParams } from 'react-router-dom';
 import { Loader2, AlertCircle, RefreshCw, PlayCircle, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useCourse } from '@/contexts/CourseContext';
 import Header from './Layout/Header';

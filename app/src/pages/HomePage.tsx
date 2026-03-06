@@ -114,7 +114,7 @@ const HomePage: React.FC = () => {
                 Three simple steps to start your personalized learning journey
               </p>
               <div className="grid gap-6 md:grid-cols-3">
-                {FEATURES.map((feature, i) => (
+                {FEATURES.map((feature) => (
                   <Card
                     key={feature.title}
                     className="animate-stagger-in group relative overflow-hidden border-border/50 hover:border-primary/20 transition-all duration-300 card-hover cursor-default"
@@ -180,10 +180,10 @@ const HomePage: React.FC = () => {
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between mb-3">
                         <p className={`px-2.5 py-1 rounded-full text-xs font-medium ${course.progress.percentage === 100
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : course.progress.percentage === 0
-                              ? 'bg-muted text-muted-foreground'
-                              : 'bg-accent text-accent-foreground'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : course.progress.percentage === 0
+                            ? 'bg-muted text-muted-foreground'
+                            : 'bg-accent text-accent-foreground'
                           }`}>
                           {course.progress.percentage === 0
                             ? 'Not Started'

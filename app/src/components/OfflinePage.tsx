@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { WifiOff, RefreshCw, Home, BookOpen } from 'lucide-react'
+import { WifiOff, RefreshCw, Home, BookOpen, ArrowRight } from 'lucide-react'
 
 interface OfflinePageProps {
   onRetry?: () => void
+  onAccessAnyway?: () => void
 }
 
-export function OfflinePage({ onRetry }: OfflinePageProps) {
+export function OfflinePage({ onRetry, onAccessAnyway }: OfflinePageProps) {
   const [isRetrying, setIsRetrying] = useState(false)
   const [countdown, setCountdown] = useState(0)
 
@@ -79,6 +80,14 @@ export function OfflinePage({ onRetry }: OfflinePageProps) {
             </div>
           </div>
         </div>
+
+        <button
+          onClick={onAccessAnyway}
+          className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium rounded-xl transition-colors mb-3"
+        >
+          <ArrowRight className="w-5 h-5" />
+          Access App Anyway
+        </button>
 
         <button
           onClick={handleRetry}

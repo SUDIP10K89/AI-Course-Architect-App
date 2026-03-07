@@ -4,7 +4,7 @@
  * Root component that sets up routing, theme, and course context.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { CourseProvider } from '@/contexts/CourseContext';
@@ -24,10 +24,11 @@ import './App.css';
 
 const PWAInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isOnline } = usePWA()
+  const [accessAnyway, setAccessAnyway] = useState(false)
   
-  // Show offline page when not online
-  if (!isOnline) {
-    return <OfflinePage />
+  // Show offline page when not online, unless user chose to access anyway
+  if (!isOnline && !accessAnyway) {
+    return <OfflinePage onAccessAnyway={() => setAccessAnyway(true)} />
   }
   
   return <>{children}</>

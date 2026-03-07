@@ -15,7 +15,8 @@ import {
   Archive,
   ExternalLink,
   GraduationCap,
-  Clock
+  Clock,
+  CloudOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +53,23 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
   const [filteredCourses, setFilteredCourses] = useState<Course[]>(courses);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    setIsOffline(!navigator.onLine);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Filter courses based on search
   useEffect(() => {
@@ -73,6 +91,13 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
   const handleDelete = async () => {
     if (!courseToDelete) return;
 
+    // Check if offline
+    if (!navigator.onLine) {
+      alert('Cannot delete course while offline. Please connect to the internet.');
+      setCourseToDelete(null);
+      return;
+    }
+
     setIsDeleting(true);
     try {
       await courseApi.deleteCourse(courseToDelete._id);
@@ -86,6 +111,12 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
   };
 
   const handleArchive = async (course: Course) => {
+    // Check if offline
+    if (!navigator.onLine) {
+      alert('Cannot archive course while offline. Please connect to the internet.');
+      return;
+    }
+    
     try {
       await courseApi.archiveCourse(course._id);
       onRefresh();
@@ -130,13 +161,20 @@ const CourseList: React.FC<CourseListProps> = ({ courses, onRefresh, isLoading =
         <p className="text-muted-foreground mb-6">
           Generate your first course to start learning
         </p>
-        <Button
-          onClick={() => navigate('/')}
-          className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90"
-        >
-          <GraduationCap className="h-4 w-4 mr-2" />
-          Create Course
-        </Button>
+        {isOffline ? (
+          <p className="text-amber-600 dark:text-amber-400">
+            <CloudOff className="inline h-4 w-4 mr-1" />
+            You're offline. Connect to internet to create new courses.
+          </p>
+        ) : (
+          <Button
+            onClick={() => navigate('/')}
+            className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90"
+          >
+            <GraduationCap className="h-4 w-4 mr-2" />
+            Create Course
+          </Button>
+        )}
       </div>
     );
   }

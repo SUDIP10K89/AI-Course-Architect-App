@@ -3,11 +3,58 @@
  * 
  * Manages global course state including current course,
  * loading states, and course list.
+ * Supports offline caching for PWA functionality.
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Course, CourseWithStatus, GenerationStatus } from '@/types';
 import * as courseApi from '@/api/courseApi';
+
+// LocalStorage keys for offline caching
+const COURSES_CACHE_KEY = 'pwa_courses_cache';
+const COURSE_DATA_PREFIX = 'pwa_course_';
+
+// Load cached courses from localStorage
+const loadCachedCourses = (): Course[] => {
+  try {
+    const cached = localStorage.getItem(COURSES_CACHE_KEY);
+    return cached ? JSON.parse(cached) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Load cached course data from localStorage
+const loadCachedCourse = (courseId: string): CourseWithStatus | null => {
+  try {
+    const cached = localStorage.getItem(`${COURSE_DATA_PREFIX}${courseId}`);
+    return cached ? JSON.parse(cached) : null;
+  } catch {
+    return null;
+  }
+};
+
+// Save course to localStorage cache
+const saveCourseToCache = (course: CourseWithStatus): void => {
+  try {
+    const courseData = course.course;
+    localStorage.setItem(`${COURSE_DATA_PREFIX}${courseData._id}`, JSON.stringify(course));
+    
+    // Update courses list cache
+    const cachedCourses = loadCachedCourses();
+    const existingIndex = cachedCourses.findIndex(c => c._id === courseData._id);
+    
+    if (existingIndex >= 0) {
+      cachedCourses[existingIndex] = courseData;
+    } else {
+      cachedCourses.unshift(courseData);
+    }
+    
+    localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(cachedCourses));
+  } catch (error) {
+    console.error('Failed to save course to cache:', error);
+  }
+};
 
 interface CourseContextType {
   // Course list
@@ -71,6 +118,14 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({ children }) => {
   // Polling interval ref
   const [pollInterval, setPollInterval] = useState<ReturnType<typeof setInterval> | null>(null);
 
+  // Load cached data on mount
+  useEffect(() => {
+    const cachedCourses = loadCachedCourses();
+    if (cachedCourses.length > 0) {
+      setCourses(cachedCourses);
+    }
+  }, []);
+
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
@@ -83,8 +138,18 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({ children }) => {
       const response = await courseApi.getAllCourses(1, 50);
       if (response.success) {
         setCourses(response.data.courses);
+        // Cache the courses for offline use
+        localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(response.data.courses));
       }
     } catch (err: unknown) {
+      // If offline, try to load from cache
+      if (!navigator.onLine) {
+        const cachedCourses = loadCachedCourses();
+        if (cachedCourses.length > 0) {
+          setCourses(cachedCourses);
+          return;
+        }
+      }
       const errorMsg = err instanceof Error ? err.message : 'Failed to load courses';
       setError(errorMsg);
     } finally {
@@ -101,8 +166,20 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({ children }) => {
       if (response.success) {
         setCurrentCourse(response.data);
         setGenerationStatus(response.data.generationStatus);
+        // Cache the course for offline use
+        saveCourseToCache(response.data);
       }
     } catch (err: unknown) {
+      // If offline, try to load from cache
+      if (!navigator.onLine) {
+        const cachedCourse = loadCachedCourse(courseId);
+        if (cachedCourse) {
+          setCurrentCourse(cachedCourse);
+          setGenerationStatus(cachedCourse.generationStatus);
+          setIsLoading(false);
+          return;
+        }
+      }
       const errorMsg = err instanceof Error ? err.message : 'Failed to load course';
       setError(errorMsg);
     } finally {

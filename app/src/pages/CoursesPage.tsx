@@ -2,10 +2,11 @@
  * Courses Page
  * 
  * Displays all courses with search, filter, and management options.
+ * Supports offline mode with cached courses.
  */
 
 import React, { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, CloudOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,8 +18,33 @@ const CoursesPage: React.FC = () => {
   const navigate = useNavigate();
   const { courses, refreshCourses, isLoading } = useCourse();
   const [activeTab, setActiveTab] = useState('all');
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      refreshCourses(); // Refresh when back online
+    };
+    
+    const handleOffline = () => {
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [refreshCourses]);
 
   useEffect(() => {
+    // If offline, skip API call and let the context load cached data
+    if (!navigator.onLine) {
+      return;
+    }
     refreshCourses();
   }, [refreshCourses]);
 
@@ -40,6 +66,14 @@ const CoursesPage: React.FC = () => {
 
       <main className="flex-1 py-8 px-4">
         <div className="max-w-6xl mx-auto">
+          {/* Offline Indicator */}
+          {isOffline && (
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2 text-amber-800 dark:text-amber-200">
+              <CloudOff className="w-4 h-4" />
+              <span className="text-sm">You're offline. Showing cached courses. Connect to internet to sync.</span>
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>

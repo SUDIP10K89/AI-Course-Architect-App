@@ -166,7 +166,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   }, [updateSyncState]);
 
-  const fetchCourses = async (page = 1, search = '') => {
+  const fetchCourses = useCallback(async (page = 1, search = '') => {
     try {
       setIsLoading(true);
       setError(null);
@@ -221,7 +221,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId, markOnline, updateSyncState]);
 
   const fetchCourse = async (courseId: string) => {
     try {
@@ -257,7 +257,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -272,7 +272,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [markOnline]);
 
   const generateCourse = async (topic: string): Promise<string> => {
     try {

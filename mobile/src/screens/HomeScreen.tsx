@@ -1,7 +1,7 @@
 /**
  * Home Screen
  *
- * Main dashboard with features, stats, recent courses, and course generator.
+ * Main dashboard with stats, course generator, and recent courses.
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -13,40 +13,29 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Sparkles, BookOpen, Video, Clock, TrendingUp, Loader2, Play, Layers3, ArrowRight, CloudOff } from 'lucide-react-native';
+import {
+  Sparkles,
+  BookOpen,
+  Clock,
+  TrendingUp,
+  Loader2,
+  Play,
+  Layers3,
+  ArrowRight,
+  CloudOff,
+} from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourse } from '@/contexts/CourseContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { GenerationProgress } from '@/components';
 import type { HomeStackParamList } from '@/navigation/types';
 import type { Course } from '@/types';
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
-
-const FEATURES = [
-  {
-    icon: Sparkles,
-    title: 'AI-Powered Content',
-    description: 'Our AI crafts structured lessons with real-world examples.',
-    gradient: '#6366f1',
-  },
-  {
-    icon: BookOpen,
-    title: 'Structured Learning',
-    description: 'Organized into modules and micro-topics for mastery.',
-    gradient: '#8b5cf6',
-  },
-  {
-    icon: Video,
-    title: 'Curated Videos',
-    description: 'Automatically finds the best YouTube videos for each lesson.',
-    gradient: '#ec4899',
-  },
-];
 
 const SUGGESTED_TOPICS = ['Machine Learning', 'React Development', 'Design Thinking', 'Startup Strategy'];
 
@@ -54,6 +43,8 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeNavigationProp>();
   const { user } = useAuth();
   const { stats, fetchStats, generateCourse, pollGenerationStatus, generationStatus, syncState } = useCourse();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [topic, setTopic] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -112,18 +103,20 @@ const HomeScreen: React.FC = () => {
 
   const homeStats = stats
     ? [
-        { label: 'Courses', value: stats.overview.totalCourses, icon: BookOpen, color: '#6366f1' },
+        { label: 'Courses', value: stats.overview.totalCourses, icon: BookOpen, color: colors.primary },
         { label: 'Modules', value: stats.overview.totalModules, icon: Layers3, color: '#8b5cf6' },
         { label: 'Lessons', value: stats.overview.totalMicroTopics, icon: Clock, color: '#f59e0b' },
-        { label: 'Avg. Progress', value: `${Math.round(stats.overview.avgProgress)}%`, icon: TrendingUp, color: '#10b981' },
+        { label: 'Avg. Progress', value: `${Math.round(stats.overview.avgProgress)}%`, icon: TrendingUp, color: colors.success },
       ]
     : [];
+
+  const recentCourses = stats?.recentCourses?.slice(0, 3) ?? [];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         <View style={styles.welcomeSection}>
           <Text style={styles.greeting}>Welcome back,</Text>
@@ -158,7 +151,7 @@ const HomeScreen: React.FC = () => {
               <TextInput
                 style={styles.generatorInput}
                 placeholder="What do you want to learn?"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.textMuted}
                 value={topic}
                 onChangeText={setTopic}
               />
@@ -168,10 +161,10 @@ const HomeScreen: React.FC = () => {
                 disabled={!topic.trim() || isGenerating}
               >
                 {isGenerating ? (
-                  <Loader2 size={20} color="#fff" />
+                  <Loader2 size={20} color={colors.textInverse} />
                 ) : (
                   <>
-                    <Sparkles size={20} color="#fff" />
+                    <Sparkles size={20} color={colors.textInverse} />
                     <Text style={styles.generateButtonText}>Generate</Text>
                   </>
                 )}
@@ -221,31 +214,16 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.featuresSection}>
-          <Text style={styles.sectionTitle}>Why AI Course Architect?</Text>
-          {FEATURES.map((feature) => (
-            <View key={feature.title} style={styles.featureCard}>
-              <View style={[styles.featureIcon, { backgroundColor: `${feature.gradient}20` }]}>
-                <feature.icon size={24} color={feature.gradient} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {stats?.recentCourses && stats.recentCourses.length > 0 && (
+        {recentCourses.length > 0 && (
           <View style={styles.recentSection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Recent Courses</Text>
               <TouchableOpacity style={styles.seeAllButton} onPress={handleViewAll}>
                 <Text style={styles.seeAllText}>See All</Text>
-                <ArrowRight size={16} color="#6366f1" />
+                <ArrowRight size={16} color={colors.primary} />
               </TouchableOpacity>
             </View>
-            {stats.recentCourses.map((course) => {
+            {recentCourses.map((course) => {
               const moduleCount = Array.isArray(course.modules) ? course.modules.length : 0;
               const progress = course.progress?.percentage ?? 0;
               const statusLabel = progress === 0 ? 'Not Started' : progress === 100 ? 'Completed' : 'In Progress';
@@ -258,26 +236,30 @@ const HomeScreen: React.FC = () => {
                 >
                   <View style={styles.courseContent}>
                     <View style={styles.recentCourseHeader}>
-                      <View style={[
-                        styles.courseStatusBadge,
-                        progress === 100
-                          ? styles.courseStatusBadgeCompleted
-                          : progress > 0
-                            ? styles.courseStatusBadgeActive
-                            : styles.courseStatusBadgeNew,
-                      ]}>
-                        <Text style={[
-                          styles.courseStatusText,
+                      <View
+                        style={[
+                          styles.courseStatusBadge,
                           progress === 100
-                            ? styles.courseStatusTextCompleted
+                            ? styles.courseStatusBadgeCompleted
                             : progress > 0
-                              ? styles.courseStatusTextActive
-                              : styles.courseStatusTextNew,
-                        ]}>
+                              ? styles.courseStatusBadgeActive
+                              : styles.courseStatusBadgeNew,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.courseStatusText,
+                            progress === 100
+                              ? styles.courseStatusTextCompleted
+                              : progress > 0
+                                ? styles.courseStatusTextActive
+                                : styles.courseStatusTextNew,
+                          ]}
+                        >
                           {statusLabel}
                         </Text>
                       </View>
-                      <Clock size={16} color="#9ca3af" />
+                      <Clock size={16} color={colors.textMuted} />
                     </View>
                     <Text style={styles.courseTitle} numberOfLines={2}>
                       {course.title}
@@ -290,7 +272,7 @@ const HomeScreen: React.FC = () => {
                     </View>
                     <Text style={styles.progressText}>{progress}% complete</Text>
                   </View>
-                  <Play size={24} color="#6366f1" />
+                  <Play size={24} color={colors.primary} />
                 </TouchableOpacity>
               );
             })}
@@ -301,332 +283,281 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  welcomeSection: {
-    marginBottom: 24,
-  },
-  greeting: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  userName: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  statsSection: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    width: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  offlineBanner: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-    backgroundColor: '#fffbeb',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fcd34d',
-    padding: 12,
-    marginBottom: 16,
-  },
-  offlineBannerText: {
-    flex: 1,
-    color: '#92400e',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  generatorSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  generatorCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  generatorInput: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#111827',
-  },
-  generateButton: {
-    backgroundColor: '#6366f1',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  generateButtonDisabled: {
-    opacity: 0.5,
-  },
-  generateButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  generationPanel: {
-    marginTop: 16,
-  },
-  generationSummaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  generationTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  generationSubtitle: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  generationPercent: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#6366f1',
-  },
-  currentLessonCard: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 12,
-    marginBottom: 12,
-  },
-  currentLessonLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6366f1',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  currentLessonTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginTop: 4,
-  },
-  currentLessonMeta: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  suggestedLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  suggestedRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  suggestedChip: {
-    backgroundColor: '#eef2ff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#c7d2fe',
-  },
-  suggestedChipText: {
-    color: '#6366f1',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  featuresSection: {
-    marginBottom: 24,
-  },
-  featureCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  featureDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  recentSection: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  seeAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  seeAllText: {
-    color: '#6366f1',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  courseCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  courseContent: {
-    flex: 1,
-  },
-  recentCourseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  courseStatusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  courseStatusBadgeNew: {
-    backgroundColor: '#f3f4f6',
-  },
-  courseStatusBadgeActive: {
-    backgroundColor: '#eef2ff',
-  },
-  courseStatusBadgeCompleted: {
-    backgroundColor: '#dcfce7',
-  },
-  courseStatusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  courseStatusTextNew: {
-    color: '#6b7280',
-  },
-  courseStatusTextActive: {
-    color: '#4f46e5',
-  },
-  courseStatusTextCompleted: {
-    color: '#15803d',
-  },
-  courseTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  courseMeta: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 2,
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#6366f1',
-    borderRadius: 2,
-  },
-});
+const createStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 28,
+    },
+    welcomeSection: {
+      marginBottom: 24,
+    },
+    greeting: {
+      fontSize: 16,
+      color: colors.textMuted,
+    },
+    userName: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    statsSection: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      marginBottom: 24,
+    },
+    statCard: {
+      width: '48%',
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    offlineBanner: {
+      flexDirection: 'row',
+      gap: 8,
+      alignItems: 'center',
+      backgroundColor: '#fffbeb',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#fcd34d',
+      padding: 12,
+      marginBottom: 16,
+    },
+    offlineBannerText: {
+      flex: 1,
+      color: '#92400e',
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    statNumber: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+      marginTop: 8,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 4,
+    },
+    generatorSection: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    generatorCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    generatorInput: {
+      flex: 1,
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: colors.text,
+    },
+    generateButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    generateButtonDisabled: {
+      opacity: 0.5,
+    },
+    generateButtonText: {
+      color: colors.textInverse,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    generationPanel: {
+      marginTop: 16,
+    },
+    generationSummaryRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    generationTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    generationSubtitle: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    generationPercent: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    currentLessonCard: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 12,
+      marginBottom: 12,
+    },
+    currentLessonLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.primary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    currentLessonTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+      marginTop: 4,
+    },
+    currentLessonMeta: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    suggestedLabel: {
+      fontSize: 14,
+      color: colors.textMuted,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    suggestedRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    suggestedChip: {
+      backgroundColor: colors.primarySoft,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    suggestedChipText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    recentSection: {
+      marginBottom: 24,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    seeAllButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    seeAllText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    courseCard: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    courseContent: {
+      flex: 1,
+    },
+    recentCourseHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    courseStatusBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+    courseStatusBadgeNew: {
+      backgroundColor: colors.surfaceMuted,
+    },
+    courseStatusBadgeActive: {
+      backgroundColor: colors.primarySoft,
+    },
+    courseStatusBadgeCompleted: {
+      backgroundColor: colors.successSoft,
+    },
+    courseStatusText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    courseStatusTextNew: {
+      color: colors.textMuted,
+    },
+    courseStatusTextActive: {
+      color: colors.primary,
+    },
+    courseStatusTextCompleted: {
+      color: colors.success,
+    },
+    courseTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    courseMeta: {
+      fontSize: 14,
+      color: colors.textMuted,
+      marginBottom: 8,
+      textTransform: 'capitalize',
+    },
+    progressBar: {
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+      marginBottom: 4,
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: colors.primary,
+      borderRadius: 2,
+    },
+    progressText: {
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+  });
 
 export default HomeScreen;

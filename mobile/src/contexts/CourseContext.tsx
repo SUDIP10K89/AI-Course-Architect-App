@@ -223,7 +223,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [userId, markOnline, updateSyncState]);
 
-  const fetchCourse = async (courseId: string) => {
+  const fetchCourse = useCallback(async (courseId: string) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -255,7 +255,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId, saveCourseDetailToCache, markOnline, updateSyncState]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -307,7 +307,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const pollGenerationStatus = async (courseId: string) => {
+  const pollGenerationStatus = useCallback(async (courseId: string) => {
     stopPolling();
     
     const poll = async () => {
@@ -352,7 +352,7 @@ export const CourseProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     
     // Then poll every 3 seconds
     pollingIntervalRef.current = setInterval(poll, 3000);
-  };
+  }, [stopPolling, updateSyncState, fetchCourse, fetchCourses]);
 
   const continueGeneration = async (courseId: string) => {
     try {

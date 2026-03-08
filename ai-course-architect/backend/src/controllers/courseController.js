@@ -552,8 +552,13 @@ export const exportCourse = async (req, res, next) => {
  */
 export const getCourseStats = async (req, res, next) => {
   try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
     const stats = await Course.aggregate([
-      { $match: { isArchived: false } },
+      { $match: { createdBy: user._id, isArchived: false } },
       {
         $group: {
           _id: null,
@@ -566,7 +571,7 @@ export const getCourseStats = async (req, res, next) => {
       },
     ]);
 
-    const recentCourses = await Course.getRecent(5);
+    const recentCourses = await Course.getRecent(user._id, 5);
 
     res.json({
       success: true,

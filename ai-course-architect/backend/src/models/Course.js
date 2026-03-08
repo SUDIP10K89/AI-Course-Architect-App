@@ -291,9 +291,9 @@ courseSchema.methods.uncompleteMicroTopic = async function (moduleId, microTopic
 /**
  * Static method to get recent courses
  */
-courseSchema.statics.getRecent = function (limit = 10) {
-  return this.find({ isArchived: false })
-    .sort({ 'metadata.lastAccessed': -1 })
+courseSchema.statics.getRecent = function (userId, limit = 10) {
+  return this.find({ createdBy: userId, isArchived: false })
+    .sort({ createdAt: -1 })
     .limit(limit)
     .select('title description topic progress difficulty metadata.lastAccessed');
 };

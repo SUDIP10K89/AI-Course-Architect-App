@@ -7,7 +7,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import * as openaiService from '../providers/ai/openai.service.js';
-import * as youtubeService from '../providers/video/youtube.service.js';
+import { checkHealth } from '../generation/services/adapters/youtube.adapter.js';
 
 const router = express.Router();
 
@@ -40,7 +40,7 @@ router.get('/detailed', async (req, res) => {
     const openaiHealthy = await openaiService.checkOpenAIHealth();
     
     // Check YouTube API
-    const youtubeHealthy = await youtubeService.checkYouTubeHealth();
+    const youtubeHealthy = await checkHealth();
     
     const allHealthy = mongoStatus === 'connected' && openaiHealthy && youtubeHealthy;
     

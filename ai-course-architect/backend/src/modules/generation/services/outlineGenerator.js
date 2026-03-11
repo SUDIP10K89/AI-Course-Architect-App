@@ -36,7 +36,7 @@ export const createCourseFromOutline = async (topic, userId) => {
     description: outline.description,
     topic,
     searchTopic: cleanTopic,
-    difficulty: 'beginner',
+    difficulty: 'intermediate',
     modules: outline.modules.map((moduleOutline, moduleIndex) => ({
       title: moduleOutline.title,
       description: '',

@@ -132,4 +132,27 @@ export const isQuotaExceeded = (error) => {
   );
 };
 
-export default { searchVideos, fetchVideoDetails, isQuotaExceeded };
+/**
+ * Health check for YouTube API
+ * @returns {Promise<boolean>} True if API is accessible
+ */
+export const checkHealth = async () => {
+  try {
+    await youtube.channels.list({
+      part: 'id',
+      mine: true,
+      maxResults: 1,
+    });
+    return true;
+  } catch (error) {
+    // If quota exceeded or auth error, API is still "working" just limited
+    if (error?.code === 403 && error?.errors?.[0]?.reason === 'quotaExceeded') {
+      return true; // API is working, just quota exceeded
+    }
+    // For other errors (network, invalid key, etc.), consider unhealthy
+    logWarn('YouTube API health check failed', { error: error.message });
+    return false;
+  }
+};
+
+export default { searchVideos, fetchVideoDetails, isQuotaExceeded, checkHealth };

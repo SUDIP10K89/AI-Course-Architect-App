@@ -32,7 +32,8 @@
     "mongoose": "^8.0.3",
     "openai": "^4.24.1",
     "puppeteer": "^21.6.1",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",

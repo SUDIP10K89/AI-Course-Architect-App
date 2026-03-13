@@ -11,12 +11,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { Home, BookOpen, Settings } from 'lucide-react-native';
+import { Home, BookOpen, Settings, PlusCircle } from 'lucide-react-native';
 
 // Import screens (will be created next)
 import LoginScreen from '@/screens/LoginScreen';
 import SignupScreen from '@/screens/SignupScreen';
 import HomeScreen from '@/screens/HomeScreen';
+import GenerateCourseScreen from '@/screens/GenerateCourseScreen';
 import CoursesListScreen from '@/screens/CoursesListScreen';
 import CourseDetailScreen from '@/screens/CourseDetailScreen';
 import LessonScreen from '@/screens/LessonScreen';
@@ -68,6 +69,11 @@ const HomeNavigator: React.FC = () => {
         options={{ title: 'AI Course Architect' }}
       />
       <HomeStack.Screen 
+        name="GenerateCourse" 
+        component={GenerateCourseScreen}
+        options={{ title: 'Generate Course' }}
+      />
+      <HomeStack.Screen 
         name="CourseDetail" 
         component={CourseDetailScreen}
         options={{ title: 'Course Details' }}
@@ -103,6 +109,11 @@ const CoursesNavigator: React.FC = () => {
         name="CoursesList" 
         component={CoursesListScreen}
         options={{ title: 'My Courses' }}
+      />
+      <CoursesStack.Screen 
+        name="GenerateCourse" 
+        component={GenerateCourseScreen}
+        options={{ title: 'Generate Course' }}
       />
       <CoursesStack.Screen 
         name="CourseDetail" 
@@ -157,6 +168,17 @@ const MainNavigator: React.FC = () => {
           tabBarLabel: 'Courses',
           tabBarIcon: ({ color, size }) => (
             <BookOpen color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="GenerateTab"
+        component={CoursesNavigator}
+        initialParams={{ screen: 'GenerateCourse' }}
+        options={{
+          tabBarLabel: 'Generate',
+          tabBarIcon: ({ color, size }) => (
+            <PlusCircle color={color} size={size} />
           ),
         }}
       />

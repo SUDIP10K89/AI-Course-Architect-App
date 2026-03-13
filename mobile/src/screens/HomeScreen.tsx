@@ -12,42 +12,36 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  Sparkles,
   BookOpen,
   Clock,
   TrendingUp,
-  Loader2,
   Play,
   Layers3,
   ArrowRight,
   CloudOff,
+  Plus,
+  Sparkles,
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourse } from '@/contexts/CourseContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { GenerationProgress } from '@/components';
 import type { HomeStackParamList } from '@/navigation/types';
 import type { Course } from '@/types';
 
 type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
-const SUGGESTED_TOPICS = ['Machine Learning', 'React Development', 'Design Thinking', 'Startup Strategy'];
-
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeNavigationProp>();
   const { user } = useAuth();
-  const { stats, fetchStats, generateCourse, pollGenerationStatus, generationStatus, syncState } = useCourse();
+  const { stats, fetchStats, syncState } = useCourse();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const [topic, setTopic] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
@@ -62,21 +56,8 @@ const HomeScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  const handleGenerateCourse = async () => {
-    if (!topic.trim()) {
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const courseId = await generateCourse(topic.trim());
-      pollGenerationStatus(courseId);
-      setTopic('');
-    } catch (error) {
-      console.error('Error generating course:', error);
-    } finally {
-      setIsGenerating(false);
-    }
+  const handleGenerateCourse = () => {
+    navigation.navigate('GenerateCourse');
   };
 
   const handleCoursePress = (course: Course) => {
@@ -88,18 +69,6 @@ const HomeScreen: React.FC = () => {
       screen: 'CoursesList',
     } as never);
   };
-
-  const currentGeneratingLesson = useMemo(() => {
-    if (!generationStatus?.lessons?.length) {
-      return null;
-    }
-
-    return (
-      generationStatus.lessons.find((lesson) => lesson.status === 'generating') ||
-      generationStatus.lessons.find((lesson) => lesson.status === 'failed') ||
-      null
-    );
-  }, [generationStatus]);
 
   const homeStats = stats
     ? [
@@ -143,77 +112,7 @@ const HomeScreen: React.FC = () => {
             ))}
           </View>
         )}
-
-        <View style={styles.generatorSection}>
-          <Text style={styles.sectionTitle}>Generate New Course</Text>
-          <View style={styles.generatorCard}>
-            <View style={styles.inputRow}>
-              <TextInput
-                style={styles.generatorInput}
-                placeholder="What do you want to learn?"
-                placeholderTextColor={colors.textMuted}
-                value={topic}
-                onChangeText={setTopic}
-              />
-              <TouchableOpacity
-                style={[styles.generateButton, (!topic.trim() || isGenerating) && styles.generateButtonDisabled]}
-                onPress={handleGenerateCourse}
-                disabled={!topic.trim() || isGenerating}
-              >
-                {isGenerating ? (
-                  <Loader2 size={20} color={colors.textInverse} />
-                ) : (
-                  <>
-                    <Sparkles size={20} color={colors.textInverse} />
-                    <Text style={styles.generateButtonText}>Generate</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {generationStatus && (
-              <View style={styles.generationPanel}>
-                <View style={styles.generationSummaryRow}>
-                  <View>
-                    <Text style={styles.generationTitle}>Generation activity</Text>
-                    <Text style={styles.generationSubtitle}>
-                      {generationStatus.generatedCount || 0} of {generationStatus.totalCount || 0} lessons ready
-                    </Text>
-                  </View>
-                  {!generationStatus.isComplete && (
-                    <Text style={styles.generationPercent}>{generationStatus.percentage || 0}%</Text>
-                  )}
-                </View>
-
-                {currentGeneratingLesson && (
-                  <View style={styles.currentLessonCard}>
-                    <Text style={styles.currentLessonLabel}>
-                      {currentGeneratingLesson.status === 'failed' ? 'Needs attention' : 'Now generating'}
-                    </Text>
-                    <Text style={styles.currentLessonTitle}>{currentGeneratingLesson.lessonTitle}</Text>
-                    <Text style={styles.currentLessonMeta}>{currentGeneratingLesson.moduleName}</Text>
-                  </View>
-                )}
-
-                <GenerationProgress showLessonDetails={false} />
-              </View>
-            )}
-
-            <Text style={styles.suggestedLabel}>Suggested topics:</Text>
-            <View style={styles.suggestedRow}>
-              {SUGGESTED_TOPICS.map((suggestedTopic) => (
-                <TouchableOpacity
-                  key={suggestedTopic}
-                  style={styles.suggestedChip}
-                  onPress={() => setTopic(suggestedTopic)}
-                >
-                  <Text style={styles.suggestedChipText}>{suggestedTopic}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-
+        
         {recentCourses.length > 0 && (
           <View style={styles.recentSection}>
             <View style={styles.sectionHeader}>
@@ -278,6 +177,23 @@ const HomeScreen: React.FC = () => {
             })}
           </View>
         )}
+
+        <View style={styles.generatorSection}>
+          <TouchableOpacity style={styles.generateCardButton} onPress={handleGenerateCourse}>
+            <View style={styles.generateCardContent}>
+              <View style={styles.generateCardIcon}>
+                <Sparkles size={28} color={colors.primary} />
+              </View>
+              <View style={styles.generateCardText}>
+                <Text style={styles.generateCardTitle}>Generate New Course</Text>
+                <Text style={styles.generateCardSubtitle}>Create AI-powered courses tailored to your learning goals</Text>
+              </View>
+            </View>
+            <ArrowRight size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        
       </ScrollView>
     </SafeAreaView>
   );
@@ -357,115 +273,43 @@ const createStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       color: colors.text,
       marginBottom: 16,
     },
-    generatorCard: {
+    generateCardButton: {
       backgroundColor: colors.surface,
       borderRadius: 16,
       padding: 16,
       borderWidth: 1,
       borderColor: colors.border,
-    },
-    inputRow: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    generatorInput: {
-      flex: 1,
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      fontSize: 16,
-      color: colors.text,
-    },
-    generateButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 12,
-      paddingHorizontal: 20,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-    },
-    generateButtonDisabled: {
-      opacity: 0.5,
-    },
-    generateButtonText: {
-      color: colors.textInverse,
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    generationPanel: {
-      marginTop: 16,
-    },
-    generationSummaryRow: {
-      flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
     },
-    generationTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    generationSubtitle: {
-      fontSize: 13,
-      color: colors.textMuted,
-      marginTop: 2,
-    },
-    generationPercent: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: colors.primary,
-    },
-    currentLessonCard: {
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 12,
-      marginBottom: 12,
-    },
-    currentLessonLabel: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: colors.primary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-    },
-    currentLessonTitle: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: colors.text,
-      marginTop: 4,
-    },
-    currentLessonMeta: {
-      fontSize: 13,
-      color: colors.textMuted,
-      marginTop: 2,
-    },
-    suggestedLabel: {
-      fontSize: 14,
-      color: colors.textMuted,
-      marginTop: 16,
-      marginBottom: 8,
-    },
-    suggestedRow: {
+    generateCardContent: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
+      alignItems: 'center',
+      flex: 1,
+      gap: 16,
     },
-    suggestedChip: {
+    generateCardIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       backgroundColor: colors.primarySoft,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    suggestedChipText: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: '500',
+    generateCardText: {
+      flex: 1,
+    },
+    generateCardTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    generateCardSubtitle: {
+      fontSize: 13,
+      color: colors.textMuted,
+      lineHeight: 18,
     },
     recentSection: {
       marginBottom: 24,

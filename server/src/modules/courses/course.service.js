@@ -43,18 +43,19 @@ export const getCourseWithStatus = async (courseId) => {
   return {
     course: course.toObject(),
     generationStatus: {
-      isComplete: generatedMicroTopics === totalMicroTopics,
+      isComplete: generatedMicroTopics === totalMicroTopics && totalMicroTopics > 0,
       generatedCount: generatedMicroTopics,
       totalCount: totalMicroTopics,
-      percentage: normalizedState === 'completed'
+      percentage: generatedMicroTopics === totalMicroTopics && totalMicroTopics > 0
         ? 100
-        : typeof storedGeneration.progress === 'number'
-          ? storedGeneration.progress
-          : derivedPercentage,
-      state: normalizedState,
+        : derivedPercentage,
+      currentMessage: storedGeneration.message || null,
       failed: normalizedState === 'failed' || course.metadata?.generationFailed || false,
-      interrupted: normalizedState === 'interrupted',
       failedReason: storedGeneration.error || course.metadata?.generationFailedReason || null,
+      lastGeneratedLessonId: storedGeneration.lastEvent?.lessonId || null,
+      // Additional fields for internal use
+      state: normalizedState,
+      interrupted: normalizedState === 'interrupted',
       message: storedGeneration.message || null,
       lastEvent: storedGeneration.event || null,
       updatedAt: storedGeneration.updatedAt || null,

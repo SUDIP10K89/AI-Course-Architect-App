@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useCourse } from '@/contexts/CourseContext';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import {
   PlayCircle,
   CheckCircle2,
@@ -27,17 +27,23 @@ import {
   BookOpen,
   Video,
   X,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, CoursesStackParamList } from '@/navigation/types';
 import type { MicroTopic, LessonContent, Video as VideoType } from '@/types';
 
 type LessonRouteProp = RouteProp<HomeStackParamList | CoursesStackParamList, 'Lesson'>;
 
+type LessonNavigationProp = NativeStackNavigationProp<HomeStackParamList | CoursesStackParamList, 'Lesson'>;
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const LessonScreen: React.FC = () => {
   const route = useRoute<LessonRouteProp>();
+  const navigation = useNavigation<LessonNavigationProp>();
   const { courseId, moduleId, microTopicId } = route.params;
 
   const { currentCourse, fetchCourse, updateProgress } = useCourse();
@@ -83,6 +89,63 @@ const LessonScreen: React.FC = () => {
     await updateProgress(courseId, moduleId, microTopicId, !microTopic.isCompleted);
   };
 
+  // Find next lesson
+  const getNextLesson = () => {
+    if (!currentCourse?.course?.modules) return null;
+    
+    let foundCurrent = false;
+    for (const mod of currentCourse.course.modules) {
+      for (const topic of mod.microTopics) {
+        if (foundCurrent) {
+          return { moduleId: mod._id, microTopicId: topic._id, title: topic.title };
+        }
+        if (topic._id === microTopicId) {
+          foundCurrent = true;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Find previous lesson
+  const getPreviousLesson = () => {
+    if (!currentCourse?.course?.modules) return null;
+    
+    let prevLesson: { moduleId: string; microTopicId: string; title: string } | null = null;
+    for (const mod of currentCourse.course.modules) {
+      for (const topic of mod.microTopics) {
+        if (topic._id === microTopicId) {
+          return prevLesson;
+        }
+        prevLesson = { moduleId: mod._id, microTopicId: topic._id, title: topic.title };
+      }
+    }
+    return null;
+  };
+
+  const nextLesson = getNextLesson();
+  const previousLesson = getPreviousLesson();
+
+  const handleNextLesson = () => {
+    if (nextLesson) {
+      navigation.push('Lesson', {
+        courseId,
+        moduleId: nextLesson.moduleId,
+        microTopicId: nextLesson.microTopicId,
+      });
+    }
+  };
+
+  const handlePreviousLesson = () => {
+    if (previousLesson) {
+      navigation.push('Lesson', {
+        courseId,
+        moduleId: previousLesson.moduleId,
+        microTopicId: previousLesson.microTopicId,
+      });
+    }
+  };
+
   if (isLoading || !microTopic || !content) {
     return (
       <View style={styles.loadingContainer}>
@@ -101,23 +164,6 @@ const LessonScreen: React.FC = () => {
           <Text style={styles.lessonEyebrow}>Lesson</Text>
           <Text style={styles.lessonTitle}>{microTopic.title}</Text>
         </View>
-
-        <TouchableOpacity
-          style={[styles.completeButton, isCompleted && styles.completedButton]}
-          onPress={handleMarkComplete}
-        >
-          {isCompleted ? (
-            <>
-              <CheckCircle2 size={20} color={colors.success} />
-              <Text style={styles.completedButtonText}>Completed</Text>
-            </>
-          ) : (
-            <>
-              <Circle size={20} color={colors.primary} />
-              <Text style={styles.completeButtonText}>Mark as Complete</Text>
-            </>
-          )}
-        </TouchableOpacity>
 
         {videos && videos.length > 0 && (
           <View style={styles.section}>
@@ -254,6 +300,48 @@ const LessonScreen: React.FC = () => {
             ))}
           </View>
         )}
+
+        {/* Bottom Action Buttons */}
+        <View style={styles.bottomActions}>
+          <View style={styles.navigationRow}>
+            {previousLesson && (
+              <TouchableOpacity
+                style={styles.prevButton}
+                onPress={handlePreviousLesson}
+              >
+                <ArrowLeft size={20} color={colors.primary} />
+                <Text style={styles.prevButtonText}>Previous</Text>
+              </TouchableOpacity>
+            )}
+
+            {nextLesson && (
+              <TouchableOpacity
+                style={styles.nextButton}
+                onPress={handleNextLesson}
+              >
+                <Text style={styles.nextButtonText}>Next</Text>
+                <ArrowRight size={20} color={colors.textInverse} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.completeButton, isCompleted && styles.completedButton]}
+            onPress={handleMarkComplete}
+          >
+            {isCompleted ? (
+              <>
+                <CheckCircle2 size={20} color={colors.success} />
+                <Text style={styles.completedButtonText}>Completed</Text>
+              </>
+            ) : (
+              <>
+                <Circle size={20} color={colors.primary} />
+                <Text style={styles.completeButtonText}>Mark as Complete</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -302,12 +390,13 @@ const createStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
-      marginHorizontal: 16,
+     
       marginVertical: 16,
       padding: 16,
       backgroundColor: colors.surface,
       borderRadius: 12,
       borderWidth: 2,
+      width: '100%',
       borderColor: colors.primary,
     },
     completedButton: {
@@ -323,6 +412,47 @@ const createStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       fontSize: 16,
       fontWeight: '600',
       color: colors.success,
+    },
+    bottomActions: {
+      padding: 16,
+      gap: 12,
+    },
+    nextButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    nextButtonText: {
+      color: colors.textInverse,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    navigationRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    prevButton: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      paddingVertical: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    prevButtonText: {
+      color: colors.text,
+      fontSize: 17,
+      fontWeight: '600',
     },
     section: {
       paddingHorizontal: 16,

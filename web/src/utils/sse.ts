@@ -7,6 +7,8 @@
 
 import type { SSEProgressEvent, SSECompleteEvent, SSEErrorEvent, SSEWarningEvent } from '@/types';
 
+export type { SSEProgressEvent, SSECompleteEvent, SSEErrorEvent, SSEWarningEvent };
+
 /**
  * Get auth token from localStorage
  */

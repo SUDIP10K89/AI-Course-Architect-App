@@ -1,7 +1,7 @@
 /**
  * Authentication Routes
  *
- * Signup and login endpoints.
+ * Signup, login, email verification, and Google OAuth endpoints.
  */
 
 import express from 'express';
@@ -10,6 +10,10 @@ import { loginValidation, signupValidation } from './auth.validators.js';
 import { validateRequest } from '../../shared/middleware/validateRequest.js';
 
 const router = express.Router();
+
+// ============================================
+// Email/Password Authentication
+// ============================================
 
 router.post(
   '/signup',
@@ -21,6 +25,29 @@ router.post(
   '/login',
   validateRequest(loginValidation),
   authController.login
+);
+
+// ============================================
+// Email Verification
+// ============================================
+
+router.post(
+  '/verify-email',
+  authController.verifyEmail
+);
+
+router.post(
+  '/resend-verification',
+  authController.resendVerification
+);
+
+// ============================================
+// Google OAuth
+// ============================================
+
+router.post(
+  '/google',
+  authController.googleAuth
 );
 
 export default router;

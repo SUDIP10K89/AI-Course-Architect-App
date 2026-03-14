@@ -29,6 +29,27 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false, // do not return password by default
     },
+    // Email verification
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      select: false,
+    },
+    verificationTokenExpires: {
+      type: Date,
+    },
+    verifiedAt: {
+      type: Date,
+    },
+    // Google OAuth
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     // User's custom API settings for AI providers
     apiSettings: {
       apiKey: {

@@ -81,6 +81,27 @@ export const RATE_LIMIT_CONFIG = {
 };
 
 /**
+ * Email configuration
+ */
+export const EMAIL_CONFIG = {
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: parseInt(process.env.SMTP_PORT, 10) || 587,
+  SMTP_SECURE: process.env.SMTP_SECURE === 'true',
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
+  APP_URL: process.env.APP_URL || 'http://localhost:5173',
+};
+
+/**
+ * Google OAuth configuration
+ */
+export const GOOGLE_CONFIG = {
+  CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+};
+
+/**
  * Validate required environment variables
  * @throws {Error} If required variables are missing
  */

@@ -16,6 +16,7 @@ import { Home, BookOpen, Settings, PlusCircle, Globe } from 'lucide-react-native
 // Import screens (will be created next)
 import LoginScreen from '@/screens/LoginScreen';
 import SignupScreen from '@/screens/SignupScreen';
+import VerifyEmailScreen from '@/screens/VerifyEmailScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import GenerateCourseScreen from '@/screens/GenerateCourseScreen';
 import PublicCoursesScreen from '@/screens/PublicCoursesScreen';
@@ -42,6 +43,7 @@ const AuthNavigator: React.FC = () => {
     >
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Signup" component={SignupScreen} />
+      <AuthStack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
     </AuthStack.Navigator>
   );
 };

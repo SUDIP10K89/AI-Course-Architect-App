@@ -86,6 +86,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await authApi.signup(form);
       
       if (response.success) {
+        // Check if email verification is required
+        if (response.data?.requiresVerification) {
+          // Don't auto-login, just set error with message to show in UI
+          const message = 'Please check your email to verify your account before logging in.';
+          setError(message);
+          throw new Error(message);
+        }
+
         const authData: AuthResponse = {
           user: response.data.user,
           token: response.data.token,

@@ -1,7 +1,7 @@
 /**
  * Login Screen
  * 
- * User authentication screen with email and password.
+ * User authentication screen with email, password, and Google OAuth.
  */
 
 import React, { useState } from 'react';
@@ -22,6 +22,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GraduationCap, Mail, Lock, ArrowRight } from 'lucide-react-native';
 import type { AuthStackParamList } from '@/navigation/types';
+import { googleLogin as googleLoginApi } from '@/api/authApi';
 
 type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -32,6 +33,7 @@ const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleLogin = async () => {
     setLocalError(null);
@@ -44,7 +46,33 @@ const LoginScreen: React.FC = () => {
     try {
       await login({ email: email.trim(), password });
     } catch (err: any) {
-      setLocalError(err.message || 'Login failed. Please try again.');
+      const errorMessage = err.message || 'Login failed. Please try again.';
+      setLocalError(errorMessage);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLocalError(null);
+    setIsGoogleLoading(true);
+
+    try {
+      // In a real implementation, you would use a library like:
+      // @react-native-google-signin/google-signin
+      // to get the ID token from Google
+      
+      // For now, we'll show a message that Google sign-in
+      // needs to be configured with the proper package
+      setLocalError('Google Sign-In requires @react-native-google-signin package. Please install it to enable.');
+      
+      // Example implementation once package is installed:
+      // import { GoogleSignin } from '@react-native-google-signin/google-signin';
+      // await GoogleSignin.hasPlayServices();
+      // const { idToken } = await GoogleSignin.signIn();
+      // await googleLoginApi(idToken);
+    } catch (err: any) {
+      setLocalError(err.message || 'Google login failed. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -114,6 +142,31 @@ const LoginScreen: React.FC = () => {
                 <>
                   <Text style={styles.buttonText}>Sign In</Text>
                   <ArrowRight size={20} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Button */}
+            <TouchableOpacity
+              style={[styles.googleButton, isGoogleLoading && styles.buttonDisabled]}
+              onPress={handleGoogleLogin}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator color="#6366f1" />
+              ) : (
+                <>
+                  <View style={styles.googleIconContainer}>
+                    <Text style={styles.googleIcon}>G</Text>
+                  </View>
+                  <Text style={styles.googleButtonText}>Continue with Google</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -237,6 +290,57 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Divider styles
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e5e7eb',
+  },
+  dividerText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    marginHorizontal: 16,
+  },
+  // Google button styles
+  googleButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    height: 56,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  googleIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  googleIcon: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#4285F4',
+  },
+  googleButtonText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

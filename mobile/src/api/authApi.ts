@@ -28,3 +28,27 @@ export const signup = async (form: SignupForm): Promise<ApiResponse<AuthResponse
 };
 
 export const register = signup;
+
+/**
+ * Verify email with token
+ */
+export const verifyEmail = async (token: string): Promise<ApiResponse<AuthResponse>> => {
+  const response = await apiPost<ApiResponse<AuthResponse>>('/auth/verify-email', { token });
+  return response.data;
+};
+
+/**
+ * Resend verification email
+ */
+export const resendVerification = async (email: string): Promise<ApiResponse<{ message: string }>> => {
+  const response = await apiPost<ApiResponse<{ message: string }>>('/auth/resend-verification', { email });
+  return response.data;
+};
+
+/**
+ * Login with Google
+ */
+export const googleLogin = async (idToken: string): Promise<ApiResponse<AuthResponse>> => {
+  const response = await apiPost<ApiResponse<AuthResponse>>('/auth/google', { idToken });
+  return response.data;
+};

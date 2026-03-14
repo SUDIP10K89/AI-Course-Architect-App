@@ -34,9 +34,11 @@ const SignupScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSignup = async () => {
     setLocalError(null);
+    setSuccessMessage(null);
     
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {
       setLocalError('Please fill in all fields');
@@ -56,7 +58,12 @@ const SignupScreen: React.FC = () => {
     try {
       await signup({ name: name.trim(), email: email.trim(), password });
     } catch (err: any) {
-      setLocalError(err.message || 'Signup failed. Please try again.');
+      // Check if this is a verification required message
+      if (err.message?.includes('verify your email') || err.message?.includes('verify your account')) {
+        setSuccessMessage(err.message);
+      } else {
+        setLocalError(err.message || 'Signup failed. Please try again.');
+      }
     }
   };
 
@@ -86,6 +93,12 @@ const SignupScreen: React.FC = () => {
             {displayError && (
               <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{displayError}</Text>
+              </View>
+            )}
+
+            {successMessage && (
+              <View style={styles.successContainer}>
+                <Text style={styles.successText}>{successMessage}</Text>
               </View>
             )}
 
@@ -223,6 +236,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#dc2626',
+    fontSize: 14,
+  },
+  successContainer: {
+    backgroundColor: '#ecfdf5',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  successText: {
+    color: '#059669',
     fontSize: 14,
   },
   inputContainer: {

@@ -158,6 +158,8 @@ export interface User {
   _id: string;
   name: string;
   email: string;
+  isVerified?: boolean;
+  googleId?: string;
 }
 
 export interface LoginForm {
@@ -174,6 +176,7 @@ export interface SignupForm {
 export interface AuthResponse {
   user: User;
   token: string;
+  requiresVerification?: boolean;
 }
 
 export interface PaginationInfo {
